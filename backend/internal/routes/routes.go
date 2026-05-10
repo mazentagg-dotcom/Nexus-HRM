@@ -1,0 +1,118 @@
+package routes
+
+import (
+	"database/sql"
+
+	"nexus-hrm/internal/config"
+	"nexus-hrm/internal/handlers"
+	"nexus-hrm/internal/middleware"
+	"nexus-hrm/internal/repositories"
+	"nexus-hrm/internal/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
+	r.GET("/health", handlers.NewHealthHandler(db).CheckHealth)
+
+	userRepo := repositories.NewUserRepository(db)
+	roleRepo := repositories.NewRoleRepository(db)
+	deptRepo := repositories.NewDepartmentRepository(db)
+	empRepo := repositories.NewEmployeeRepository(db)
+	attRepo := repositories.NewAttendanceRepository(db)
+	leaveRepo := repositories.NewLeaveRequestRepository(db)
+	payrollRepo := repositories.NewPayrollRepository(db)
+	docRepo := repositories.NewEmployeeDocumentRepository(db)
+	notifRepo := repositories.NewNotificationRepository(db)
+
+	authSvc := services.NewAuthService(userRepo, roleRepo, cfg.JWTSecret, cfg.JWTExpiry)
+	userSvc := services.NewUserService(userRepo)
+	roleSvc := services.NewRoleService(roleRepo)
+	notifSvc := services.NewNotificationService(notifRepo)
+	hrSvc := services.NewHRService(deptRepo, empRepo, attRepo, leaveRepo, payrollRepo, docRepo, notifSvc)
+
+	authHandler := handlers.NewAuthHandler(authSvc)
+	userHandler := handlers.NewUserHandler(userSvc)
+	roleHandler := handlers.NewRoleHandler(roleSvc)
+	notifHandler := handlers.NewNotificationsHandler(notifSvc)
+	hrHandler := handlers.NewHRHandler(hrSvc, db)
+
+	auth := r.Group("/api/v1/auth")
+	{
+		auth.POST("/login", authHandler.Login)
+		auth.POST("/register", authHandler.Register)
+	}
+
+	api := r.Group("/api/v1")
+	api.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	{
+		authP := api.Group("/auth")
+		{
+			authP.GET("/me", authHandler.GetMe)
+			authP.PUT("/change-password", authHandler.ChangePassword)
+		}
+
+		users := api.Group("/users")
+		users.Use(middleware.RequirePermission("users.view"))
+		{
+			users.GET("", userHandler.GetUsers)
+			users.GET("/:id", userHandler.GetUser)
+			users.POST("", middleware.RequirePermission("users.create"), userHandler.CreateUser)
+			users.PUT("/:id", middleware.RequirePermission("users.edit"), userHandler.UpdateUser)
+			users.PATCH("/:id/deactivate", middleware.RequirePermission("users.deactivate"), userHandler.DeactivateUser)
+		}
+
+		roles := api.Group("/roles")
+		roles.Use(middleware.RequirePermission("users.view"))
+		{
+			roles.GET("", roleHandler.GetRoles)
+			roles.GET("/:id", roleHandler.GetRole)
+			roles.POST("", middleware.RequirePermission("users.create"), roleHandler.CreateRole)
+			roles.PUT("/:id", middleware.RequirePermission("users.edit"), roleHandler.UpdateRole)
+			roles.DELETE("/:id", middleware.RequirePermission("users.delete"), roleHandler.DeleteRole)
+		}
+
+		notifications := api.Group("/notifications")
+		{
+			notifications.GET("", notifHandler.GetNotifications)
+			notifications.GET("/dashboard", notifHandler.GetDashboard)
+			notifications.GET("/unread-count", notifHandler.GetUnreadCount)
+			notifications.GET("/:id", notifHandler.GetNotification)
+			notifications.PUT("/:id/read", notifHandler.MarkRead)
+			notifications.PUT("/read-all", notifHandler.MarkAllRead)
+			notifications.DELETE("/:id", notifHandler.DeleteNotification)
+		}
+
+		hr := api.Group("/hr")
+		hr.Use(middleware.RequirePermission("hr.view"))
+		{
+			hr.GET("/dashboard", hrHandler.GetDashboard)
+			hr.GET("/org/chart", hrHandler.GetOrgChart)
+			hr.GET("/departments", hrHandler.GetDepartments)
+			hr.GET("/departments/:id/employees", hrHandler.GetEmployeesByDepartment)
+			hr.GET("/departments/:id", hrHandler.GetDepartment)
+			hr.POST("/departments", middleware.RequirePermission("hr.create"), hrHandler.CreateDepartment)
+			hr.PUT("/departments/:id", middleware.RequirePermission("hr.edit"), hrHandler.UpdateDepartment)
+			hr.DELETE("/departments/:id", middleware.RequirePermission("hr.delete"), hrHandler.DeleteDepartment)
+			hr.GET("/employees", hrHandler.GetEmployees)
+			hr.GET("/employees/:id", hrHandler.GetEmployee)
+			hr.POST("/employees", middleware.RequirePermission("hr.create"), hrHandler.CreateEmployee)
+			hr.PUT("/employees/:id", middleware.RequirePermission("hr.edit"), hrHandler.UpdateEmployee)
+			hr.GET("/attendance", hrHandler.GetAttendance)
+			hr.POST("/attendance/check-in", hrHandler.CheckIn)
+			hr.POST("/attendance/check-out", hrHandler.CheckOut)
+			hr.GET("/leave-requests", hrHandler.GetLeaveRequests)
+			hr.POST("/leave-requests", middleware.RequirePermission("hr.create"), hrHandler.CreateLeaveRequest)
+			hr.PUT("/leave-requests/:id/approve", hrHandler.ApproveLeave)
+			hr.PUT("/leave-requests/:id/reject", hrHandler.RejectLeave)
+			hr.GET("/payroll", hrHandler.GetPayrollRecords)
+			hr.GET("/payroll/:id", hrHandler.GetPayrollRecord)
+			hr.POST("/payroll", middleware.RequirePermission("hr.create"), hrHandler.CreatePayrollRecord)
+			hr.PUT("/payroll/:id", middleware.RequirePermission("hr.edit"), hrHandler.UpdatePayrollRecord)
+			hr.GET("/documents", hrHandler.GetEmployeeDocuments)
+			hr.POST("/documents", middleware.RequirePermission("hr.create"), hrHandler.CreateEmployeeDocument)
+			hr.DELETE("/documents/:id", middleware.RequirePermission("hr.delete"), hrHandler.DeleteEmployeeDocument)
+			hr.GET("/managers/:id/team", hrHandler.GetEmployeesByManager)
+		}
+	}
+}
