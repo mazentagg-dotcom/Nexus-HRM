@@ -24,12 +24,13 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	payrollRepo := repositories.NewPayrollRepository(db)
 	docRepo := repositories.NewEmployeeDocumentRepository(db)
 	notifRepo := repositories.NewNotificationRepository(db)
+	loanRepo := repositories.NewLoanRepository(db)
 
 	authSvc := services.NewAuthService(userRepo, roleRepo, cfg.JWTSecret, cfg.JWTExpiry)
 	userSvc := services.NewUserService(userRepo)
 	roleSvc := services.NewRoleService(roleRepo)
 	notifSvc := services.NewNotificationService(notifRepo)
-	hrSvc := services.NewHRService(deptRepo, empRepo, attRepo, leaveRepo, payrollRepo, docRepo, notifSvc)
+	hrSvc := services.NewHRService(deptRepo, empRepo, attRepo, leaveRepo, payrollRepo, docRepo, notifSvc, loanRepo)
 
 	authHandler := handlers.NewAuthHandler(authSvc)
 	userHandler := handlers.NewUserHandler(userSvc)
@@ -50,6 +51,20 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 		{
 			authP.GET("/me", authHandler.GetMe)
 			authP.PUT("/change-password", authHandler.ChangePassword)
+		}
+
+		me := api.Group("/me")
+		{
+			me.GET("/employee", hrHandler.GetMyEmployee)
+			me.GET("/leave-requests", hrHandler.GetMyLeaveRequests)
+			me.POST("/leave-requests", hrHandler.CreateMyLeaveRequest)
+			me.GET("/leave-balance", hrHandler.GetMyLeaveBalance)
+			me.GET("/payroll", hrHandler.GetMyPayroll)
+			me.GET("/attendance", hrHandler.GetMyAttendance)
+			me.POST("/attendance/check-in", hrHandler.CheckIn)
+			me.POST("/attendance/check-out", hrHandler.CheckOut)
+			me.GET("/loans", hrHandler.GetMyLoans)
+			me.POST("/loans", hrHandler.CreateMyLoan)
 		}
 
 		users := api.Group("/users")
@@ -112,6 +127,9 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 			hr.GET("/documents", hrHandler.GetEmployeeDocuments)
 			hr.POST("/documents", middleware.RequirePermission("hr.create"), hrHandler.CreateEmployeeDocument)
 			hr.DELETE("/documents/:id", middleware.RequirePermission("hr.delete"), hrHandler.DeleteEmployeeDocument)
+			hr.GET("/loans", hrHandler.GetAllLoans)
+			hr.PUT("/loans/:id/approve", hrHandler.ApproveLoan)
+			hr.PUT("/loans/:id/reject", hrHandler.RejectLoan)
 			hr.GET("/managers/:id/team", hrHandler.GetEmployeesByManager)
 		}
 	}

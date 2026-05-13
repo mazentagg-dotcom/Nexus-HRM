@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -105,6 +106,7 @@ func (h *HRHandler) GetEmployees(c *gin.Context) {
 
 	employees, total, err := h.service.GetEmployees(search, department, status, p.Page, p.PageSize)
 	if err != nil {
+		log.Printf("GetEmployees error: %v", err)
 		utils.InternalError(c, "Failed to load employees")
 		return
 	}
@@ -449,4 +451,166 @@ func (h *HRHandler) GetEmployeesByManager(c *gin.Context) {
 		return
 	}
 	utils.Success(c, employees)
+}
+
+func (h *HRHandler) GetMyEmployee(c *gin.Context) {
+	userID := c.GetString("user_id")
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.NotFound(c, "Employee profile not found")
+		return
+	}
+	utils.Success(c, emp)
+}
+
+func (h *HRHandler) GetMyLeaveRequests(c *gin.Context) {
+	userID := c.GetString("user_id")
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.BadRequest(c, "No employee profile found")
+		return
+	}
+	p := utils.GetPagination(c)
+	status := c.Query("status")
+	leaves, total, err := h.service.GetLeaveRequests(emp.ID, status, "", p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load leave requests")
+		return
+	}
+	utils.Paginated(c, leaves, total, p)
+}
+
+func (h *HRHandler) CreateMyLeaveRequest(c *gin.Context) {
+	userID := c.GetString("user_id")
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.BadRequest(c, "No employee profile found")
+		return
+	}
+	var req models.CreateLeaveRequest
+	if !utils.BindAndValidate(c, &req) {
+		return
+	}
+	req.EmployeeID = emp.ID
+	lr, err := h.service.CreateLeaveRequest(&req)
+	if err != nil {
+		utils.Error(c, http.StatusConflict, "Conflict", err.Error())
+		return
+	}
+	utils.Created(c, lr)
+}
+
+func (h *HRHandler) GetMyLeaveBalance(c *gin.Context) {
+	userID := c.GetString("user_id")
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.BadRequest(c, "No employee profile found")
+		return
+	}
+	balance, err := h.service.GetLeaveBalance(emp.ID)
+	if err != nil {
+		utils.InternalError(c, "Failed to load leave balance")
+		return
+	}
+	utils.Success(c, balance)
+}
+
+func (h *HRHandler) GetMyPayroll(c *gin.Context) {
+	userID := c.GetString("user_id")
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.BadRequest(c, "No employee profile found")
+		return
+	}
+	p := utils.GetPagination(c)
+	records, total, err := h.service.GetPayrollRecords(emp.ID, "", p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load payroll records")
+		return
+	}
+	utils.Paginated(c, records, total, p)
+}
+
+func (h *HRHandler) GetMyAttendance(c *gin.Context) {
+	userID := c.GetString("user_id")
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.BadRequest(c, "No employee profile found")
+		return
+	}
+	p := utils.GetPagination(c)
+	records, total, err := h.service.GetAttendance(emp.ID, "", "", "", p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load attendance")
+		return
+	}
+	utils.Paginated(c, records, total, p)
+}
+
+func (h *HRHandler) GetMyLoans(c *gin.Context) {
+	userID := c.GetString("user_id")
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.BadRequest(c, "No employee profile found")
+		return
+	}
+	p := utils.GetPagination(c)
+	loans, total, err := h.service.GetMyLoans(emp.ID, p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load loans")
+		return
+	}
+	utils.Paginated(c, loans, total, p)
+}
+
+func (h *HRHandler) CreateMyLoan(c *gin.Context) {
+	userID := c.GetString("user_id")
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.BadRequest(c, "No employee profile found")
+		return
+	}
+	var req models.CreateLoanRequest
+	if !utils.BindAndValidate(c, &req) {
+		return
+	}
+	loan, err := h.service.CreateLoan(emp.ID, &req)
+	if err != nil {
+		utils.Error(c, http.StatusConflict, "Conflict", err.Error())
+		return
+	}
+	utils.Created(c, loan)
+}
+
+func (h *HRHandler) GetAllLoans(c *gin.Context) {
+	p := utils.GetPagination(c)
+	status := c.Query("status")
+	loans, total, err := h.service.GetAllLoans(status, p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load loans")
+		return
+	}
+	utils.Paginated(c, loans, total, p)
+}
+
+func (h *HRHandler) ApproveLoan(c *gin.Context) {
+	id := c.Param("id")
+	userID := c.GetString("user_id")
+	loan, err := h.service.UpdateLoanStatus(id, "approved", userID)
+	if err != nil {
+		utils.InternalError(c, "Failed to approve loan")
+		return
+	}
+	utils.Success(c, loan)
+}
+
+func (h *HRHandler) RejectLoan(c *gin.Context) {
+	id := c.Param("id")
+	userID := c.GetString("user_id")
+	loan, err := h.service.UpdateLoanStatus(id, "rejected", userID)
+	if err != nil {
+		utils.InternalError(c, "Failed to reject loan")
+		return
+	}
+	utils.Success(c, loan)
 }

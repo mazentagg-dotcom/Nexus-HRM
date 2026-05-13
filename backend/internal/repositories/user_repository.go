@@ -21,8 +21,8 @@ func (r *UserRepository) FindByID(id string) (*models.User, error) {
 	var avatar sql.NullString
 	var lastLogin sql.NullTime
 
-	query := `SELECT id, email, first_name, last_name, COALESCE(phone, ''), COALESCE(avatar, ''),
-		active, verified, last_login, created_at, updated_at
+	query := `SELECT id, email, first_name, last_name, COALESCE(phone, ''), COALESCE(avatar_url, ''),
+		is_active, is_verified, last_login_at, created_at, updated_at
 		FROM users WHERE id = $1`
 
 	err := r.db.QueryRow(query, id).Scan(
@@ -49,8 +49,8 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 	var lastLogin sql.NullTime
 	var passwordHash string
 
-	query := `SELECT id, email, first_name, last_name, COALESCE(phone, ''), COALESCE(avatar, ''),
-		active, verified, last_login, created_at, updated_at, password_hash
+	query := `SELECT id, email, first_name, last_name, COALESCE(phone, ''), COALESCE(avatar_url, ''),
+		is_active, is_verified, last_login_at, created_at, updated_at, password_hash
 		FROM users WHERE email = $1`
 
 	err := r.db.QueryRow(query, email).Scan(
@@ -84,9 +84,9 @@ func (r *UserRepository) FindAll(search, status string, page, pageSize int) ([]m
 	}
 	if status != "" {
 		if status == "active" {
-			conditions = append(conditions, fmt.Sprintf("active = true"))
+			conditions = append(conditions, "is_active = true")
 		} else if status == "inactive" {
-			conditions = append(conditions, fmt.Sprintf("active = false"))
+			conditions = append(conditions, "is_active = false")
 		}
 	}
 
@@ -104,8 +104,8 @@ func (r *UserRepository) FindAll(search, status string, page, pageSize int) ([]m
 	offset := (page - 1) * pageSize
 	args = append(args, pageSize, offset)
 
-	query := fmt.Sprintf(`SELECT id, email, first_name, last_name, COALESCE(phone, ''), COALESCE(avatar, ''),
-		active, verified, last_login, created_at, updated_at
+	query := fmt.Sprintf(`SELECT id, email, first_name, last_name, COALESCE(phone, ''), COALESCE(avatar_url, ''),
+		is_active, is_verified, last_login_at, created_at, updated_at
 		FROM users%s ORDER BY created_at DESC LIMIT $%d OFFSET $%d`,
 		where, argIdx, argIdx+1)
 
@@ -140,7 +140,7 @@ func (r *UserRepository) FindAll(search, status string, page, pageSize int) ([]m
 }
 
 func (r *UserRepository) Create(user *models.User) error {
-	query := `INSERT INTO users (id, email, first_name, last_name, phone, avatar, password_hash, active)
+	query := `INSERT INTO users (id, email, first_name, last_name, phone, avatar_url, password_hash, is_active)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
 	_, err := r.db.Exec(query,
@@ -154,7 +154,7 @@ func (r *UserRepository) Create(user *models.User) error {
 }
 
 func (r *UserRepository) Update(user *models.User) error {
-	query := `UPDATE users SET first_name = $1, last_name = $2, phone = $3, avatar = $4, active = $5, updated_at = NOW()
+	query := `UPDATE users SET first_name = $1, last_name = $2, phone = $3, avatar_url = $4, is_active = $5, updated_at = NOW()
 		WHERE id = $6`
 
 	_, err := r.db.Exec(query,
@@ -175,7 +175,7 @@ func (r *UserRepository) UpdatePassword(id, hash string) error {
 }
 
 func (r *UserRepository) Deactivate(id string) error {
-	_, err := r.db.Exec(`UPDATE users SET active = false, updated_at = NOW() WHERE id = $1`, id)
+	_, err := r.db.Exec(`UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("deactivate user: %w", err)
 	}
@@ -183,7 +183,7 @@ func (r *UserRepository) Deactivate(id string) error {
 }
 
 func (r *UserRepository) UpdateLastLogin(id string) error {
-	_, err := r.db.Exec(`UPDATE users SET last_login = NOW() WHERE id = $1`, id)
+	_, err := r.db.Exec(`UPDATE users SET last_login_at = NOW() WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("update last login: %w", err)
 	}

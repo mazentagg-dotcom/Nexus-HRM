@@ -57,6 +57,14 @@ type DocumentRepo interface {
 	Delete(id string) error
 }
 
+type LoanRepo interface {
+	FindByEmployeeID(employeeID string, page, pageSize int) ([]models.LoanRequest, int64, error)
+	FindAll(status string, page, pageSize int) ([]models.LoanRequest, int64, error)
+	FindByID(id string) (*models.LoanRequest, error)
+	Create(employeeID string, req *models.CreateLoanRequest) (*models.LoanRequest, error)
+	UpdateStatus(id, status, approvedBy string) error
+}
+
 type NotifService interface {
 	CreateNotification(userID, title, message, ntype string, link *string) (*models.Notification, error)
 }
@@ -69,9 +77,10 @@ type HRService struct {
 	payrollRepo  PayrollRepo
 	docRepo      DocumentRepo
 	notifService NotifService
+	loanRepo     LoanRepo
 }
 
-func NewHRService(dept DepartmentRepo, emp EmployeeRepo, att AttendanceRepo, leave LeaveRequestRepo, payroll PayrollRepo, doc DocumentRepo, notif NotifService) *HRService {
+func NewHRService(dept DepartmentRepo, emp EmployeeRepo, att AttendanceRepo, leave LeaveRequestRepo, payroll PayrollRepo, doc DocumentRepo, notif NotifService, loan LoanRepo) *HRService {
 	return &HRService{
 		deptRepo:     dept,
 		empRepo:      emp,
@@ -80,6 +89,7 @@ func NewHRService(dept DepartmentRepo, emp EmployeeRepo, att AttendanceRepo, lea
 		payrollRepo:  payroll,
 		docRepo:      doc,
 		notifService: notif,
+		loanRepo:     loan,
 	}
 }
 
@@ -473,4 +483,65 @@ func parseDate(s string) (*time.Time, error) {
 
 func timeNow() time.Time {
 	return time.Now()
+}
+
+func (s *HRService) GetLeaveBalance(employeeID string) ([]map[string]interface{}, error) {
+	leaves, _, err := s.leaveRepo.FindAll(employeeID, "", "", 1, 1000)
+	if err != nil {
+		return nil, err
+	}
+
+	type balance struct {
+		Total float64
+		Used  float64
+	}
+	balances := map[string]*balance{
+		"annual":   {Total: 20},
+		"sick":     {Total: 10},
+		"personal": {Total: 5},
+	}
+
+	for _, l := range leaves {
+		if b, ok := balances[l.LeaveType]; ok {
+			b.Used += l.DurationDays
+		}
+	}
+
+	var result []map[string]interface{}
+	types := []string{"annual", "sick", "personal", "unpaid"}
+	labels := map[string]string{"annual": "Annual Leave", "sick": "Sick Leave", "personal": "Personal Leave", "unpaid": "Unpaid Leave"}
+	for _, t := range types {
+		b := balances[t]
+		remaining := b.Total - b.Used
+		if remaining < 0 {
+			remaining = 0
+		}
+		result = append(result, map[string]interface{}{
+			"type":      t,
+			"label":     labels[t],
+			"total":     b.Total,
+			"used":      b.Used,
+			"remaining": remaining,
+		})
+	}
+	return result, nil
+}
+
+func (s *HRService) GetMyLoans(employeeID string, page, pageSize int) ([]models.LoanRequest, int64, error) {
+	return s.loanRepo.FindByEmployeeID(employeeID, page, pageSize)
+}
+
+func (s *HRService) GetAllLoans(status string, page, pageSize int) ([]models.LoanRequest, int64, error) {
+	return s.loanRepo.FindAll(status, page, pageSize)
+}
+
+func (s *HRService) CreateLoan(employeeID string, req *models.CreateLoanRequest) (*models.LoanRequest, error) {
+	return s.loanRepo.Create(employeeID, req)
+}
+
+func (s *HRService) UpdateLoanStatus(id, status, approverID string) (*models.LoanRequest, error) {
+	if err := s.loanRepo.UpdateStatus(id, status, approverID); err != nil {
+		return nil, err
+	}
+	return s.loanRepo.FindByID(id)
 }

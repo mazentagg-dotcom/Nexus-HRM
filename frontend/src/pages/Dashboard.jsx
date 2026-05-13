@@ -5,20 +5,11 @@ import StatsCard from '../components/StatsCard'
 import AnimatedTable from '../components/AnimatedTable'
 import Badge from '../components/Badge'
 import Button from '../components/Button'
-import { getHRDashboard } from '../api/hr'
-import {
-  kpiCards, employees as mockEmployees, leaveRequests as mockLeaves,
-  departments, headcountTrend, deptChartData,
-  leaveStatusColors, leaveTypeColors,
-} from '../data/hr'
+import { getHRDashboard, getLeaveRequests } from '../api/hr'
 import {
   Users, UserCheck, Building2, CalendarOff, DollarSign, Activity,
   ChevronRight, UserPlus, Calendar, Clock, DollarSign as DollarIcon, ClipboardCheck,
 } from 'lucide-react'
-import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell,
-} from 'recharts'
 
 const iconMap = { Users, UserCheck, Building2, CalendarOff, DollarSign, Activity }
 
@@ -26,8 +17,8 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
 const fadeScale = { hidden: { opacity: 0, scale: 0.96 }, show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
 
-const tooltipStyle = { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.08)', fontSize: '13px' }
-const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#ef4444', '#14b8a6']
+const leaveStatusColors = { pending: 'amber', approved: 'emerald', rejected: 'rose' }
+const leaveTypeColors = { annual: 'blue', sick: 'emerald', personal: 'purple', unpaid: 'gray' }
 
 function SkeletonCard({ className = '' }) {
   return (
@@ -46,29 +37,33 @@ const quickActionColors = {
   rose: 'from-rose-500 to-rose-600 shadow-rose-200',
 }
 
+const kpiConfig = [
+  { id: 'total_employees', title: 'Total Employees', icon: 'Users', color: 'indigo' },
+  { id: 'active_employees', title: 'Active Employees', icon: 'UserCheck', color: 'emerald' },
+  { id: 'total_departments', title: 'Departments', icon: 'Building2', color: 'violet' },
+  { id: 'pending_leaves', title: 'Pending Leaves', icon: 'CalendarOff', color: 'amber' },
+  { id: 'monthly_payroll', title: 'Monthly Payroll', icon: 'DollarSign', color: 'sky', prefix: '$' },
+  { id: 'attendance_rate', title: 'Attendance Rate', icon: 'Activity', color: 'rose', suffix: '%' },
+]
+
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [apiData, setApiData] = useState(null)
+  const [leaves, setLeaves] = useState([])
   const navigate = useNavigate()
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      getHRDashboard()
-        .then((res) => setApiData(res.data?.data))
-        .catch(() => {})
-        .finally(() => setLoading(false))
+      Promise.all([
+        getHRDashboard().then((res) => res.data?.data || {}).catch(() => ({})),
+        getLeaveRequests({ page: 1, pageSize: 5 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+      ]).then(([dashboard, leaveData]) => {
+        setApiData(dashboard)
+        setLeaves(leaveData)
+      }).finally(() => setLoading(false))
     }, 600)
     return () => clearTimeout(timer)
   }, [])
-
-  const kpis = kpiCards.map(kpi => {
-    if (!apiData) return kpi
-    const m = { total_employees: apiData.total_employees, active_employees: apiData.active_employees, total_departments: apiData.total_departments, pending_leaves: apiData.pending_leaves, monthly_payroll: apiData.monthly_payroll, attendance_rate: apiData.attendance_rate }
-    return m[kpi.id] !== undefined ? { ...kpi, value: m[kpi.id] } : kpi
-  })
-
-  const leaves = mockLeaves || []
-  const pendingLeaves = leaves.filter(l => l.status === 'pending')
 
   const quickActions = [
     { label: 'Add Employee', desc: 'New hire', icon: UserPlus, color: 'indigo', path: '/employees' },
@@ -95,53 +90,18 @@ export default function Dashboard() {
         </div>
       ) : (
         <motion.div variants={fadeUp} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {kpis.map((kpi, i) => {
+          {kpiConfig.map((kpi, i) => {
             const Icon = iconMap[kpi.icon] || Users
-            return <StatsCard key={kpi.id} title={kpi.title} value={kpi.value} prefix={kpi.prefix} suffix={kpi.suffix} icon={Icon} trend={kpi.trend} trendValue={kpi.trendValue} color={kpi.color} delay={i * 0.03} />
+            let value = apiData?.[kpi.id]
+            if (value === undefined || value === null) value = '-'
+            if (kpi.prefix && value !== '-') value = kpi.prefix + Number(value).toLocaleString()
+            if (kpi.suffix && value !== '-') value = value + kpi.suffix
+            return <StatsCard key={kpi.id} title={kpi.title} value={value} icon={Icon} color={kpi.color} delay={i * 0.03} />
           })}
         </motion.div>
       )}
 
-      {loading ? null : (
-        <motion.div variants={fadeScale} className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="lg:col-span-1 rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-            <div className="px-6 pt-5 pb-3">
-              <h3 className="text-sm font-semibold text-gray-900">Headcount Trend</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Monthly employee count</p>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={headcountTrend || []}>
-                <defs><linearGradient id="hcGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} domain={['dataMin - 5', 'dataMax + 5']} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2.5} fill="url(#hcGrad)" name="Employees" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="lg:col-span-1 rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-            <div className="px-6 pt-5 pb-3">
-              <h3 className="text-sm font-semibold text-gray-900">Department Distribution</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Employees per department</p>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={deptChartData || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={28}>
-                  {(deptChartData || []).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      )}
-
-      {loading ? null : (
+      {!loading && (
         <motion.div variants={fadeScale} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-6 pt-5 pb-3">
@@ -153,8 +113,8 @@ export default function Dashboard() {
             <AnimatedTable
               columns={[
                 { key: 'employee_name', label: 'Employee', render: v => <span className="font-medium text-gray-900">{v}</span> },
-                { key: 'type', label: 'Type', render: v => <Badge color={leaveTypeColors[v] || 'gray'}>{v}</Badge> },
-                { key: 'total_days', label: 'Days', render: v => <span className="font-medium">{v}</span> },
+                { key: 'leave_type', label: 'Type', render: v => <Badge color={leaveTypeColors[v] || 'gray'}>{v}</Badge> },
+                { key: 'duration_days', label: 'Days', render: v => <span className="font-medium">{v}</span> },
                 { key: 'start_date', label: 'From', render: v => <span className="text-gray-500 text-xs">{v}</span> },
                 { key: 'status', label: 'Status', render: v => <Badge color={leaveStatusColors[v] || 'gray'}>{v}</Badge> },
               ]}

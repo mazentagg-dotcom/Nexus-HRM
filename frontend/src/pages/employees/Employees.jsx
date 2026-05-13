@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import StatsCard from '../../components/StatsCard'
 import AnimatedTable from '../../components/AnimatedTable'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
@@ -9,21 +8,18 @@ import Input from '../../components/ui/Input'
 import Select from '../../components/ui/Select'
 import Textarea from '../../components/ui/Textarea'
 import { useToast } from '../../components/feedback/Toast'
-import { getEmployees, createEmployee } from '../../api/hr'
+import { getEmployees, createEmployee, getDepartments, getLeaveRequests, getAttendance, getPayrollRecords, getEmployeeDocuments } from '../../api/hr'
 import {
-  employees as mockEmployees, attendanceRecords as mockAttendance,
-  leaveRequests as mockLeaves, payrollRecords as mockPayroll, employeeDocuments as mockDocuments,
-  departments, employeeStatusColors, leaveStatusColors, attendanceStatusColors,
-  documentTypeColors, payrollStatusColors,
-} from '../../data/hr'
-import {
-  Users, Search, Plus, X, Check, FileText, Clock, Mail, Phone, MapPin, Calendar,
-  Briefcase, CheckCircle, XCircle,
+  Users, Search, Plus, X, Check, FileText, Clock,
 } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
 const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
-const fadeScale = { hidden: { opacity: 0, scale: 0.96 }, show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
+
+const employeeStatusColors = { active: 'emerald', on_leave: 'amber', probation: 'sky', terminated: 'rose' }
+const leaveStatusColors = { pending: 'amber', approved: 'emerald', rejected: 'rose' }
+const attendanceStatusColors = { present: 'emerald', absent: 'rose', late: 'amber', half_day: 'blue', on_leave: 'purple' }
+const documentTypeColors = { contract: 'blue', id_card: 'emerald', passport: 'purple', tax_form: 'amber', certificate: 'sky', other: 'gray' }
 
 const fmt = n => '$' + Number(n).toLocaleString()
 const fmtBytes = b => b >= 1000000 ? (b / 1000000).toFixed(1) + ' MB' : (b / 1000).toFixed(0) + ' KB'
@@ -38,21 +34,24 @@ export default function Employees() {
   const [submitting, setSubmitting] = useState(false)
   const { showToast } = useToast()
 
-  const [employeesData, setEmployeesData] = useState(null)
+  const [employeesData, setEmployeesData] = useState([])
+  const [departments, setDepartments] = useState([])
 
   useEffect(() => {
-    getEmployees({ page: 1, pageSize: 100 })
-      .then(r => { const d = r.data?.data; setEmployeesData(d?.items || d || null) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    Promise.all([
+      getEmployees({ page: 1, pageSize: 100 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+      getDepartments({ page: 1, pageSize: 100 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+    ]).then(([emps, depts]) => {
+      setEmployeesData(emps)
+      setDepartments(depts)
+    }).finally(() => setLoading(false))
   }, [])
 
-  const employees = employeesData || mockEmployees || []
-  const leaves = mockLeaves || []
+  const employees = employeesData
 
   const filteredEmployees = employees.filter(e => {
     const name = `${e.first_name || ''} ${e.last_name || ''}`.toLowerCase()
-    const ms = !search || name.includes(search.toLowerCase()) || (e.employee_code || '').toLowerCase().includes(search.toLowerCase()) || (e.department || '').toLowerCase().includes(search.toLowerCase()) || (e.email || '').toLowerCase().includes(search.toLowerCase())
+    const ms = !search || name.includes(search.toLowerCase()) || (e.employee_code || '').toLowerCase().includes(search.toLowerCase()) || (e.department_name || '').toLowerCase().includes(search.toLowerCase()) || (e.email || '').toLowerCase().includes(search.toLowerCase())
     const mf = !statusFilter || (e.status || 'active') === statusFilter
     return ms && mf
   })
@@ -63,9 +62,18 @@ export default function Employees() {
   const formatDate = d => { if (!d) return ''; try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) } catch { return d } }
 
   const openEmployeeDrawer = (emp) => {
-    const full = { ...emp, attendance: (mockAttendance || []).filter(a => a.employee_id === emp.id), leaves: leaves.filter(l => l.employee_id === emp.id), payroll: (mockPayroll || []).filter(p => p.employee_id === emp.id), docs: (mockDocuments || []).filter(d => d.employee_id === emp.id) }
+    const full = { ...emp, attendance: [], leaves: [], payroll: [], docs: [] }
     setSelectedEmployee(full)
     setDrawerOpen(true)
+
+    Promise.all([
+      getAttendance({ employee_id: emp.id, page: 1, pageSize: 10 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+      getLeaveRequests({ employee_id: emp.id, page: 1, pageSize: 10 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+      getPayrollRecords({ employee_id: emp.id, page: 1, pageSize: 10 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+      getEmployeeDocuments({ employee_id: emp.id, page: 1, pageSize: 10 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+    ]).then(([attendance, leaves, payroll, docs]) => {
+      setSelectedEmployee(prev => prev ? { ...prev, attendance, leaves, payroll, docs } : prev)
+    })
   }
 
   return (
@@ -94,11 +102,11 @@ export default function Employees() {
               <div className="text-left"><span className="font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">{r.first_name} {r.last_name}</span><p className="text-[11px] text-gray-400">{r.email}</p></div>
             </button>
           )},
-          { key: 'department', label: 'Department' },
+          { key: 'department_name', label: 'Department' },
           { key: 'position', label: 'Role', render: v => <span className="text-gray-500 text-xs">{v}</span> },
           { key: 'status', label: 'Status', render: v => <Badge color={employeeStatusColors[v] || 'gray'}>{v}</Badge> },
           { key: 'hire_date', label: 'Hire Date', render: v => <span className="text-gray-400 text-xs">{formatDate(v)}</span> },
-        ]} data={filteredEmployees} pageSize={10} />
+        ]} data={filteredEmployees} pageSize={10} loading={loading} />
       </motion.div>
 
       <AnimatePresence>
@@ -125,7 +133,7 @@ export default function Employees() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-lg border border-gray-100 p-3"><p className="text-[11px] text-gray-400">Email</p><p className="text-sm text-gray-700 truncate">{selectedEmployee.email}</p></div>
                     <div className="rounded-lg border border-gray-100 p-3"><p className="text-[11px] text-gray-400">Phone</p><p className="text-sm text-gray-700">{selectedEmployee.phone}</p></div>
-                    <div className="rounded-lg border border-gray-100 p-3"><p className="text-[11px] text-gray-400">Department</p><p className="text-sm text-gray-700">{selectedEmployee.department}</p></div>
+                    <div className="rounded-lg border border-gray-100 p-3"><p className="text-[11px] text-gray-400">Department</p><p className="text-sm text-gray-700">{selectedEmployee.department_name}</p></div>
                     <div className="rounded-lg border border-gray-100 p-3"><p className="text-[11px] text-gray-400">Hire Date</p><p className="text-sm text-gray-700">{formatDate(selectedEmployee.hire_date)}</p></div>
                   </div>
                 </div>
@@ -133,7 +141,7 @@ export default function Employees() {
                   <h4 className="text-sm font-semibold text-gray-900 mb-3">Salary</h4>
                   <div className="rounded-lg border border-gray-100 p-4 bg-gradient-to-r from-indigo-50 to-purple-50">
                     <p className="text-2xl font-bold text-gray-900">{fmt(selectedEmployee.salary)}</p>
-                    <p className="text-xs text-gray-500 mt-1">Annual salary &middot; {fmt(Math.round(selectedEmployee.salary / 12))}/month</p>
+                    <p className="text-xs text-gray-500 mt-1">Annual salary &middot; {fmt(Math.round((selectedEmployee.salary || 0) / 12))}/month</p>
                   </div>
                 </div>
                 {selectedEmployee.attendance && selectedEmployee.attendance.length > 0 && (
@@ -156,10 +164,23 @@ export default function Employees() {
                       {selectedEmployee.leaves.map(l => (
                         <div key={l.id} className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
                           <div>
-                            <p className="text-sm text-gray-900">{l.type} - {l.total_days} day{l.total_days > 1 ? 's' : ''}</p>
+                            <p className="text-sm text-gray-900">{l.leave_type} - {l.duration_days} day{l.duration_days > 1 ? 's' : ''}</p>
                             <p className="text-[11px] text-gray-400">{formatDate(l.start_date)} - {formatDate(l.end_date)}</p>
                           </div>
                           <Badge color={leaveStatusColors[l.status] || 'gray'}>{l.status}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {selectedEmployee.payroll && selectedEmployee.payroll.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Payroll Records ({selectedEmployee.payroll.length})</h4>
+                    <div className="space-y-2">
+                      {selectedEmployee.payroll.map(p => (
+                        <div key={p.id} className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
+                          <div><p className="text-sm text-gray-900">{p.pay_period_start || 'N/A'}</p><p className="text-[11px] text-gray-400">{p.status}</p></div>
+                          <div className="text-right"><p className="text-sm font-bold text-gray-900">{fmt(p.net_pay)}</p></div>
                         </div>
                       ))}
                     </div>
@@ -171,7 +192,7 @@ export default function Employees() {
                     <div className="space-y-2">
                       {selectedEmployee.docs.map(d => (
                         <div key={d.id} className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
-                          <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-gray-400" /><div><p className="text-sm text-gray-900">{d.document_name}</p><p className="text-[11px] text-gray-400">{fmtBytes(d.file_size)}</p></div></div>
+                          <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-gray-400" /><div><p className="text-sm text-gray-900">{d.title}</p><p className="text-[11px] text-gray-400">{fmtBytes(d.file_size)}</p></div></div>
                           <Badge color={documentTypeColors[d.document_type] || 'gray'}>{d.document_type}</Badge>
                         </div>
                       ))}
@@ -198,7 +219,7 @@ export default function Employees() {
           </div>
           <Input label="Employee Code" name="employee_code" placeholder="EMP-XXX" required />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select label="Department" name="department_id" options={(departments || []).map(d => ({ value: d.id, label: d.name }))} placeholder="Select department" required />
+            <Select label="Department" name="department_id" options={departments.map(d => ({ value: d.id, label: d.name }))} placeholder="Select department" required />
             <Input label="Position" name="position" placeholder="Job title" required />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS employees (
     emergency_contact_relation VARCHAR(50),
     avatar_url TEXT,
     bio TEXT,
+    notes TEXT,
     skills JSONB DEFAULT '[]'::jsonb,
     education JSONB DEFAULT '[]'::jsonb,
     certifications JSONB DEFAULT '[]'::jsonb,

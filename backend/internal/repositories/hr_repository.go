@@ -38,6 +38,11 @@ func (r *DepartmentRepository) FindAll(search string, page, pageSize int) ([]mod
 	}
 
 	listQ += " ORDER BY name"
+	if search != "" {
+		listQ += " LIMIT $2 OFFSET $3"
+	} else {
+		listQ += " LIMIT $1 OFFSET $2"
+	}
 	args = append(args, pageSize, (page-1)*pageSize)
 
 	rows, err := r.db.Query(listQ, args...)
@@ -186,6 +191,8 @@ func (r *EmployeeRepository) FindAll(search, department, status string, page, pa
 	}
 
 	listQ := baseList + whereClause + " ORDER BY e.first_name, e.last_name"
+	argN2 := argN
+	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN2, argN2+1)
 	args = append(args, pageSize, (page-1)*pageSize)
 
 	rows, err := r.db.Query(listQ, args...)
@@ -197,7 +204,7 @@ func (r *EmployeeRepository) FindAll(search, department, status string, page, pa
 	for rows.Next() {
 		var e models.Employee
 		var userID, phone, gender, addr, city, state, country, zip sql.NullString
-		var dob sql.NullTime
+		var dob, confirmationDate sql.NullTime
 		var deptID, position, empType, reportsTo, workLoc, salCur, payFreq sql.NullString
 		var bankName, bankAcct, bankRoute, taxID, emerName, emerPhone, emerRel, bio, notes sql.NullString
 		var salary sql.NullFloat64
@@ -206,7 +213,7 @@ func (r *EmployeeRepository) FindAll(search, department, status string, page, pa
 		err := rows.Scan(&e.ID, &userID, &e.EmployeeCode, &e.FirstName, &e.LastName, &e.Email, &phone,
 			&gender, &dob, &addr, &city, &state, &country, &zip,
 			&deptID, &position, &empType, &e.Status,
-			&e.HireDate, nil, &reportsTo, &workLoc,
+			&e.HireDate, &confirmationDate, &reportsTo, &workLoc,
 			&salary, &salCur, &payFreq,
 			&bankName, &bankAcct, &bankRoute, &taxID,
 			&emerName, &emerPhone, &emerRel,
@@ -255,12 +262,11 @@ func (r *EmployeeRepository) FindAll(search, department, status string, page, pa
 func (r *EmployeeRepository) FindByID(id string) (*models.Employee, error) {
 	var e models.Employee
 	var userID, phone, gender, addr, city, state, country, zip sql.NullString
-	var dob sql.NullTime
+	var dob, confirmationDate sql.NullTime
 	var deptID, position, empType, reportsTo, workLoc, salCur, payFreq sql.NullString
 	var bankName, bankAcct, bankRoute, taxID, emerName, emerPhone, emerRel, bio, notes sql.NullString
 	var salary sql.NullFloat64
 	var deptName sql.NullString
-	var confDate sql.NullTime
 
 	q := `SELECT e.id, e.user_id, e.employee_code, e.first_name, e.last_name, e.email, e.phone,
 		e.gender, e.date_of_birth, e.address, e.city, e.state, e.country, e.zip_code,
@@ -276,7 +282,7 @@ func (r *EmployeeRepository) FindByID(id string) (*models.Employee, error) {
 	err := r.db.QueryRow(q, id).Scan(&e.ID, &userID, &e.EmployeeCode, &e.FirstName, &e.LastName, &e.Email, &phone,
 		&gender, &dob, &addr, &city, &state, &country, &zip,
 		&deptID, &position, &empType, &e.Status,
-		&e.HireDate, &confDate, &reportsTo, &workLoc,
+		&e.HireDate, &confirmationDate, &reportsTo, &workLoc,
 		&salary, &salCur, &payFreq,
 		&bankName, &bankAcct, &bankRoute, &taxID,
 		&emerName, &emerPhone, &emerRel,
@@ -302,7 +308,7 @@ func (r *EmployeeRepository) FindByID(id string) (*models.Employee, error) {
 	e.DepartmentName = toStringPtr(deptName)
 	e.Position = toStringPtr(position)
 	e.EmploymentType = toStringPtr(empType)
-	e.ConfirmationDate = nullTimeToTimePtr(confDate)
+	e.ConfirmationDate = nullTimeToTimePtr(confirmationDate)
 	e.ReportsTo = toStringPtr(reportsTo)
 	e.WorkLocation = toStringPtr(workLoc)
 	if salary.Valid {
@@ -326,7 +332,7 @@ func (r *EmployeeRepository) FindByID(id string) (*models.Employee, error) {
 func (r *EmployeeRepository) FindByUserID(userID string) (*models.Employee, error) {
 	var e models.Employee
 	var phone, gender, addr, city, state, country, zip sql.NullString
-	var dob sql.NullTime
+	var dob, confirmationDate sql.NullTime
 	var deptID, position, empType, reportsTo, workLoc, salCur, payFreq sql.NullString
 	var bankName, bankAcct, bankRoute, taxID, emerName, emerPhone, emerRel, bio, notes sql.NullString
 	var salary sql.NullFloat64
@@ -346,7 +352,7 @@ func (r *EmployeeRepository) FindByUserID(userID string) (*models.Employee, erro
 	err := r.db.QueryRow(q, userID).Scan(&e.ID, &e.UserID, &e.EmployeeCode, &e.FirstName, &e.LastName, &e.Email, &phone,
 		&gender, &dob, &addr, &city, &state, &country, &zip,
 		&deptID, &position, &empType, &e.Status,
-		&e.HireDate, nil, &reportsTo, &workLoc,
+		&e.HireDate, &confirmationDate, &reportsTo, &workLoc,
 		&salary, &salCur, &payFreq,
 		&bankName, &bankAcct, &bankRoute, &taxID,
 		&emerName, &emerPhone, &emerRel,
@@ -550,6 +556,7 @@ func (r *AttendanceRepository) FindAll(employeeID, dateFrom, dateTo, status stri
 	r.db.QueryRow(baseCount+whereClause, args...).Scan(&total)
 
 	listQ := baseList + whereClause + " ORDER BY a.date DESC, a.created_at DESC"
+	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)
 	args = append(args, pageSize, (page-1)*pageSize)
 
 	rows, err := r.db.Query(listQ, args...)
@@ -707,6 +714,7 @@ func (r *LeaveRequestRepository) FindAll(employeeID, status, leaveType string, p
 	r.db.QueryRow(baseCount+whereClause, args...).Scan(&total)
 
 	listQ := baseList + whereClause + " ORDER BY lr.created_at DESC"
+	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)
 	args = append(args, pageSize, (page-1)*pageSize)
 
 	rows, err := r.db.Query(listQ, args...)
@@ -825,6 +833,7 @@ func (r *PayrollRepository) FindAll(employeeID, status string, page, pageSize in
 	r.db.QueryRow(baseCount+whereClause, args...).Scan(&total)
 
 	listQ := baseList + whereClause + " ORDER BY pr.pay_period_start DESC, pr.created_at DESC"
+	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)
 	args = append(args, pageSize, (page-1)*pageSize)
 
 	rows, err := r.db.Query(listQ, args...)
@@ -1004,6 +1013,7 @@ func (r *EmployeeDocumentRepository) FindAll(employeeID, docType string, page, p
 	r.db.QueryRow(baseCount+whereClause, args...).Scan(&total)
 
 	listQ := baseList + whereClause + " ORDER BY created_at DESC"
+	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)
 	args = append(args, pageSize, (page-1)*pageSize)
 
 	rows, err := r.db.Query(listQ, args...)
@@ -1073,4 +1083,139 @@ func (r *EmployeeDocumentRepository) Create(doc *models.CreateEmployeeDocumentRe
 func (r *EmployeeDocumentRepository) Delete(id string) error {
 	_, err := r.db.Exec("DELETE FROM employee_documents WHERE id = $1", id)
 	return err
+}
+
+type LoanRepository struct {
+	db *sql.DB
+}
+
+func NewLoanRepository(db *sql.DB) *LoanRepository {
+	return &LoanRepository{db: db}
+}
+
+func (r *LoanRepository) FindByEmployeeID(employeeID string, page, pageSize int) ([]models.LoanRequest, int64, error) {
+	var total int64
+	if err := r.db.QueryRow(`SELECT COUNT(*) FROM loan_requests WHERE employee_id = $1`, employeeID).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count loans: %w", err)
+	}
+
+	offset := (page - 1) * pageSize
+	q := `SELECT l.id, l.employee_id, COALESCE(e.first_name || ' ' || e.last_name, ''), l.amount, l.purpose,
+		l.monthly_installment, l.repayment_months, l.status, l.approved_by, l.rejection_reason,
+		l.created_at, l.updated_at
+		FROM loan_requests l LEFT JOIN employees e ON l.employee_id = e.id
+		WHERE l.employee_id = $1 ORDER BY l.created_at DESC LIMIT $2 OFFSET $3`
+	rows, err := r.db.Query(q, employeeID, pageSize, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list loans: %w", err)
+	}
+	defer rows.Close()
+
+	return scanLoans(rows, total)
+}
+
+func (r *LoanRepository) FindAll(status string, page, pageSize int) ([]models.LoanRequest, int64, error) {
+	var where string
+	var args []interface{}
+	if status != "" {
+		where = " WHERE l.status = $1"
+		args = append(args, status)
+	}
+
+	var total int64
+	countQ := "SELECT COUNT(*) FROM loan_requests l" + where
+	if err := r.db.QueryRow(countQ, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count loans: %w", err)
+	}
+
+	offset := (page - 1) * pageSize
+	args = append(args, pageSize, offset)
+	argIdx := len(args)
+
+	q := fmt.Sprintf(`SELECT l.id, l.employee_id, COALESCE(e.first_name || ' ' || e.last_name, ''), l.amount, l.purpose,
+		l.monthly_installment, l.repayment_months, l.status, l.approved_by, l.rejection_reason,
+		l.created_at, l.updated_at
+		FROM loan_requests l LEFT JOIN employees e ON l.employee_id = e.id%s
+		ORDER BY l.created_at DESC LIMIT $%d OFFSET $%d`, where, argIdx-1, argIdx)
+	rows, err := r.db.Query(q, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list all loans: %w", err)
+	}
+	defer rows.Close()
+
+	return scanLoans(rows, total)
+}
+
+func (r *LoanRepository) FindByID(id string) (*models.LoanRequest, error) {
+	q := `SELECT l.id, l.employee_id, COALESCE(e.first_name || ' ' || e.last_name, ''), l.amount, l.purpose,
+		l.monthly_installment, l.repayment_months, l.status, l.approved_by, l.rejection_reason,
+		l.created_at, l.updated_at
+		FROM loan_requests l LEFT JOIN employees e ON l.employee_id = e.id WHERE l.id = $1`
+	var loan models.LoanRequest
+	var empName, approvedBy, rejectionReason sql.NullString
+	var monthlyInst sql.NullFloat64
+	err := r.db.QueryRow(q, id).Scan(&loan.ID, &loan.EmployeeID, &empName, &loan.Amount, &loan.Purpose,
+		&monthlyInst, &loan.RepaymentMonths, &loan.Status, &approvedBy, &rejectionReason,
+		&loan.CreatedAt, &loan.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find loan: %w", err)
+	}
+	loan.EmployeeName = empName.String
+	if monthlyInst.Valid {
+		loan.MonthlyInstallment = monthlyInst.Float64
+	}
+	loan.ApprovedBy = toStringPtr(approvedBy)
+	loan.RejectionReason = toStringPtr(rejectionReason)
+	return &loan, nil
+}
+
+func (r *LoanRepository) Create(employeeID string, req *models.CreateLoanRequest) (*models.LoanRequest, error) {
+	q := `INSERT INTO loan_requests (employee_id, amount, purpose, repayment_months)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, monthly_installment, status, created_at, updated_at`
+	var loan models.LoanRequest
+	err := r.db.QueryRow(q, employeeID, req.Amount, req.Purpose, req.RepaymentMonths).
+		Scan(&loan.ID, &loan.MonthlyInstallment, &loan.Status, &loan.CreatedAt, &loan.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("create loan: %w", err)
+	}
+	loan.EmployeeID = employeeID
+	loan.Amount = req.Amount
+	loan.Purpose = req.Purpose
+	loan.RepaymentMonths = req.RepaymentMonths
+	return &loan, nil
+}
+
+func (r *LoanRepository) UpdateStatus(id, status, approvedBy string) error {
+	if status == "rejected" {
+		_, err := r.db.Exec(`UPDATE loan_requests SET status = $1, approved_by = $2, updated_at = NOW() WHERE id = $3`, status, approvedBy, id)
+		return err
+	}
+	_, err := r.db.Exec(`UPDATE loan_requests SET status = $1, approved_by = $2, updated_at = NOW() WHERE id = $3`, status, approvedBy, id)
+	return err
+}
+
+func scanLoans(rows *sql.Rows, total int64) ([]models.LoanRequest, int64, error) {
+	var items []models.LoanRequest
+	for rows.Next() {
+		var loan models.LoanRequest
+		var empName, approvedBy, rejectionReason sql.NullString
+		var monthlyInst sql.NullFloat64
+		if err := rows.Scan(&loan.ID, &loan.EmployeeID, &empName, &loan.Amount, &loan.Purpose,
+			&monthlyInst, &loan.RepaymentMonths, &loan.Status, &approvedBy, &rejectionReason,
+			&loan.CreatedAt, &loan.UpdatedAt); err != nil {
+			return nil, 0, fmt.Errorf("scan loan: %w", err)
+		}
+		loan.EmployeeName = empName.String
+		if monthlyInst.Valid {
+			loan.MonthlyInstallment = monthlyInst.Float64
+		}
+		loan.ApprovedBy = toStringPtr(approvedBy)
+		loan.RejectionReason = toStringPtr(rejectionReason)
+		items = append(items, loan)
+	}
+	return items, total, rows.Err()
 }

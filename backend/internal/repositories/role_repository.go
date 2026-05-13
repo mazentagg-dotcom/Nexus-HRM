@@ -48,7 +48,7 @@ func (r *RoleRepository) FindByUserIDWithPermissions(userID string) ([]models.Ro
 		return nil, nil, err
 	}
 
-	permQuery := `SELECT DISTINCT p.slug
+	permQuery := `SELECT DISTINCT p.name
 		FROM permissions p
 		JOIN role_permissions rp ON rp.permission_id = p.id
 		JOIN user_roles ur ON ur.role_id = rp.role_id

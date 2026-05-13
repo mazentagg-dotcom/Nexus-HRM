@@ -1,33 +1,33 @@
 import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
 import Badge from '../../components/Badge'
-import { departments, employees } from '../../data/hr'
-import { Users, ChevronRight, ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+import { getOrgChart, getEmployees } from '../../api/hr'
+import { ChevronDown } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
 const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
 
 const deptColors = ['#6366f1', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#ef4444', '#14b8a6']
 
-function DepartmentNode({ dept, index, level = 0 }) {
+function DepartmentNode({ dept, allEmployees, index, level = 0 }) {
   const [expanded, setExpanded] = useState(true)
-  const deptEmployees = (employees || []).filter(e => e.department === dept.name)
+  const deptEmployees = allEmployees.filter(e => e.department_id === dept.id)
   const color = deptColors[index % deptColors.length]
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: level * 0.1 + index * 0.05 }}>
       <div
-        className={`flex items-center gap-3 rounded-xl border border-gray-100 bg-white shadow-sm p-4 cursor-pointer hover:shadow-card-hover transition-all ${level > 0 ? `ml-${level * 12}` : ''}`}
+        className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white shadow-sm p-4 cursor-pointer hover:shadow-card-hover transition-all"
         style={{ marginLeft: level * 48 }}
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white font-bold text-sm" style={{ backgroundColor: color }}>
-          {dept.name.slice(0, 2).toUpperCase()}
+          {(dept.name || '').slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-semibold text-gray-900">{dept.name}</h4>
-            <Badge color="indigo">{dept.employee_count} people</Badge>
+            <Badge color="indigo">{dept.employee_count || deptEmployees.length} people</Badge>
           </div>
           <p className="text-xs text-gray-500 mt-0.5">{dept.description}</p>
         </div>
@@ -38,10 +38,10 @@ function DepartmentNode({ dept, index, level = 0 }) {
 
       {expanded && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
-          <div className="grid grid-cols-1 gap-2 mt-2 ml-12" style={{ marginLeft: level * 48 + 48 }}>
+          <div className="grid grid-cols-1 gap-2 mt-2" style={{ marginLeft: level * 48 + 48 }}>
             {deptEmployees.slice(0, 6).map((emp, i) => (
               <motion.div key={emp.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }} className="flex items-center gap-3 rounded-lg border border-gray-50 bg-white p-3 hover:bg-gray-50 transition-colors">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-[10px] font-semibold text-gray-600">{emp.first_name[0]}{emp.last_name[0]}</div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-[10px] font-semibold text-gray-600">{(emp.first_name || '')[0]}{(emp.last_name || '')[0]}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-gray-900">{emp.first_name} {emp.last_name}</p>
                   <p className="text-[10px] text-gray-400">{emp.position}</p>
@@ -52,6 +52,9 @@ function DepartmentNode({ dept, index, level = 0 }) {
             {deptEmployees.length > 6 && (
               <p className="text-xs text-gray-400 pl-10">+{deptEmployees.length - 6} more employees</p>
             )}
+            {deptEmployees.length === 0 && (
+              <p className="text-xs text-gray-400 pl-10">No employees assigned</p>
+            )}
           </div>
         </motion.div>
       )}
@@ -60,7 +63,31 @@ function DepartmentNode({ dept, index, level = 0 }) {
 }
 
 export default function OrgChart() {
-  const depts = departments || []
+  const [loading, setLoading] = useState(true)
+  const [depts, setDepts] = useState([])
+  const [allEmployees, setAllEmployees] = useState([])
+
+  useEffect(() => {
+    Promise.all([
+      getOrgChart().then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+      getEmployees({ page: 1, pageSize: 200 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+    ]).then(([departments, employees]) => {
+      setDepts(departments)
+      setAllEmployees(employees)
+    }).finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+        <motion.div variants={fadeUp}>
+          <h1 className="text-2xl font-bold text-gray-900">Org Chart</h1>
+          <p className="mt-1 text-sm text-gray-500">Organization structure and team hierarchy.</p>
+        </motion.div>
+        <div className="animate-pulse rounded-xl border border-gray-100 bg-white shadow-sm p-6 h-64" />
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -76,15 +103,19 @@ export default function OrgChart() {
           </div>
           <div>
             <h3 className="text-lg font-bold text-gray-900">Nexus HRM</h3>
-            <p className="text-sm text-gray-500">{(employees || []).length} employees &middot; {depts.length} departments</p>
+            <p className="text-sm text-gray-500">{allEmployees.length} employees &middot; {depts.length} departments</p>
           </div>
         </div>
 
-        <div className="space-y-3">
-          {depts.map((dept, i) => (
-            <DepartmentNode key={dept.id} dept={dept} index={i} level={0} />
-          ))}
-        </div>
+        {depts.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-12">No departments found</p>
+        ) : (
+          <div className="space-y-3">
+            {depts.map((dept, i) => (
+              <DepartmentNode key={dept.id} dept={dept} allEmployees={allEmployees} index={i} level={0} />
+            ))}
+          </div>
+        )}
       </motion.div>
     </motion.div>
   )

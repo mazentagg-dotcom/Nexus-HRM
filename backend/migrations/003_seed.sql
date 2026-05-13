@@ -36,6 +36,15 @@ INSERT INTO permissions (id, name, module, action, description) VALUES
 INSERT INTO permissions (id, name, module, action, description) VALUES
     ('30000000-0000-0000-0000-000000000002', 'settings.edit', 'settings', 'edit', 'Edit settings') ON CONFLICT (name) DO NOTHING;
 
+INSERT INTO permissions (id, name, module, action, description) VALUES
+    ('40000000-0000-0000-0000-000000000001', 'self_service.view', 'self_service', 'view', 'Access self-service portal') ON CONFLICT (name) DO NOTHING;
+INSERT INTO permissions (id, name, module, action, description) VALUES
+    ('40000000-0000-0000-0000-000000000002', 'self_service.leave', 'self_service', 'leave', 'Apply for leave') ON CONFLICT (name) DO NOTHING;
+INSERT INTO permissions (id, name, module, action, description) VALUES
+    ('40000000-0000-0000-0000-000000000003', 'self_service.attendance', 'self_service', 'attendance', 'Clock in/out') ON CONFLICT (name) DO NOTHING;
+INSERT INTO permissions (id, name, module, action, description) VALUES
+    ('40000000-0000-0000-0000-000000000004', 'self_service.loan', 'self_service', 'loan', 'Apply for loans') ON CONFLICT (name) DO NOTHING;
+
 -- ============================================
 -- Roles
 -- ============================================
@@ -52,6 +61,10 @@ INSERT INTO roles (id, name, slug, description, is_system) VALUES
 -- Super Admin - All permissions
 -- ============================================
 INSERT INTO role_permissions (role_id, permission_id) SELECT 'a0000000-0000-0000-0000-000000000001', id FROM permissions ON CONFLICT DO NOTHING;
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT 'a0000000-0000-0000-0000-000000000004', id FROM permissions WHERE module = 'self_service'
+ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- HR Director - all HR + users.view/create/edit + settings
@@ -94,18 +107,33 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 -- ============================================
 INSERT INTO users (id, email, password_hash, first_name, last_name, phone, is_active, is_verified) VALUES
     ('b0000000-0000-0000-0000-000000000001', 'admin@nexus-hrm.com',
-     '$2b$12$5PcymcfDT2tHMEVvwyM6DemU3tfKIqHnb1wEan3Hig5He1ta2H85G',
+     '$2a$10$4LuI30K88sg.55WaCOKwWuwS5pgAYbuXZzsOtzsw4qZYxS0TD3VsK',
      'Admin', 'User', '+1 (555) 000-0001', true, true) ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO users (id, email, password_hash, first_name, last_name, phone, is_active, is_verified) VALUES
     ('b0000000-0000-0000-0000-000000000002', 'sarah.ahmed@nexus-hrm.com',
-     '$2b$12$5PcymcfDT2tHMEVvwyM6DemU3tfKIqHnb1wEan3Hig5He1ta2H85G',
+     '$2a$10$4LuI30K88sg.55WaCOKwWuwS5pgAYbuXZzsOtzsw4qZYxS0TD3VsK',
      'Sarah', 'Ahmed', '+1 (555) 000-0002', true, true) ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO users (id, email, password_hash, first_name, last_name, phone, is_active, is_verified) VALUES
+    ('b0000000-0000-0000-0000-000000000003', 'employee@nexus-hrm.com',
+     '$2a$10$4LuI30K88sg.55WaCOKwWuwS5pgAYbuXZzsOtzsw4qZYxS0TD3VsK',
+     'John', 'Doe', '+1 (555) 000-0003', true, true) ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role_id) VALUES
     ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001') ON CONFLICT DO NOTHING;
 INSERT INTO user_roles (user_id, role_id) VALUES
     ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002') ON CONFLICT DO NOTHING;
+INSERT INTO user_roles (user_id, role_id) VALUES
+    ('b0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004') ON CONFLICT DO NOTHING;
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT 'a0000000-0000-0000-0000-000000000002', id FROM permissions WHERE module = 'self_service'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT 'a0000000-0000-0000-0000-000000000003', id FROM permissions WHERE module = 'self_service'
+ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- Departments
@@ -146,5 +174,7 @@ INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, d
     ('d0000000-0000-0000-0000-000000000009', 'EMP-009', 'Jessica',  'Lee',        'jessica.lee@nexus-hrm.com',     '+1 (555) 100-0009', '1994-06-30', 'female', 'c0000000-0000-0000-0000-000000000005', 'Senior Accountant',   'Senior Accountant',      'full_time', 'active', '2021-02-01', 85000.00,  'd0000000-0000-0000-0000-000000000001') ON CONFLICT (employee_code) DO NOTHING;
 INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, date_of_birth, gender, department_id, position, job_title, employment_type, employment_status, hire_date, base_salary, reports_to) VALUES
     ('d0000000-0000-0000-0000-000000000010', 'EMP-010', 'Daniel',   'Thomas',     'daniel.thomas@nexus-hrm.com',   '+1 (555) 100-0010', '1995-02-14', 'male',   'c0000000-0000-0000-0000-000000000001', 'Junior Developer',    'Junior Software Engineer', 'full_time', 'probation', '2024-09-01', 70000.00, 'd0000000-0000-0000-0000-000000000003') ON CONFLICT (employee_code) DO NOTHING;
+INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, date_of_birth, gender, department_id, position, job_title, employment_type, employment_status, hire_date, base_salary, reports_to, user_id) VALUES
+    ('d0000000-0000-0000-0000-000000000011', 'EMP-011', 'John',     'Doe',        'employee@nexus-hrm.com',       '+1 (555) 100-0011', '1993-08-20', 'male',   'c0000000-0000-0000-0000-000000000001', 'Developer',           'Software Engineer',      'full_time', 'active', '2022-03-15', 90000.00,  'd0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000003') ON CONFLICT (employee_code) DO NOTHING;
 
 COMMIT;
