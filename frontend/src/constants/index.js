@@ -1,5 +1,6 @@
 export const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: 'LayoutDashboard', permission: null },
+  { path: '/', label: 'Dashboard', icon: 'LayoutDashboard', permission: 'hr.view', adminOnly: true },
+  { path: '/employee-dashboard', label: 'Dashboard', icon: 'LayoutDashboard', permission: null, employeeOnly: true },
   { path: '/employees', label: 'Employees', icon: 'Users', permission: 'hr.view' },
   { path: '/attendance', label: 'Attendance', icon: 'Activity', permission: 'hr.view' },
   { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff', permission: 'hr.view' },

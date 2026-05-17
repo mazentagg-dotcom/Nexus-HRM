@@ -126,8 +126,8 @@ function SidebarContent({ collapsed, isMobile, onToggle, onClose, user, logout }
   }
 
   const visibleItems = isAdmin
-    ? NAV_ITEMS
-    : NAV_ITEMS.filter((item) => !item.permission || hasPermission(item.permission))
+    ? NAV_ITEMS.filter((item) => !item.employeeOnly)
+    : NAV_ITEMS.filter((item) => !item.adminOnly && (!item.permission || hasPermission(item.permission)))
 
   const userInitials = user
     ? `${(user.first_name || '').charAt(0)}${(user.last_name || '').charAt(0)}`.toUpperCase() ||

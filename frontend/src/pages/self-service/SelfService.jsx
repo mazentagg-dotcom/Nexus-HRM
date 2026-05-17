@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Tabs from '../../components/ui/Tabs'
 import Badge from '../../components/Badge'
@@ -21,7 +22,9 @@ const fmtDate = d => { if (!d) return ''; try { return new Date(d).toLocaleDateS
 export default function SelfService() {
   const { user } = useAuth()
   const { showToast } = useToast()
-  const [activeTab, setActiveTab] = useState('profile')
+  const location = useLocation()
+  const initialTab = location.state?.tab || 'profile'
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [employee, setEmployee] = useState(null)
   const [leaveBalance, setLeaveBalance] = useState([])
   const [myLeaves, setMyLeaves] = useState([])
