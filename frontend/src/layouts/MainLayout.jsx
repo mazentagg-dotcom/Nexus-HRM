@@ -35,7 +35,7 @@ export default function MainLayout() {
       />
 
       <div
-        className="flex flex-1 flex-col overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        className="flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
       >
         <Navbar
@@ -44,7 +44,7 @@ export default function MainLayout() {
         />
 
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-6 lg:px-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
