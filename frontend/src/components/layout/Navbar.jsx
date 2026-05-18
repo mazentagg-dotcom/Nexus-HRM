@@ -30,6 +30,7 @@ const routeLabels = {
   '/performance': 'Performance',
   '/org-chart': 'Org Chart',
   '/self-service': 'Self-Service',
+  '/employee-dashboard': 'Dashboard',
   '/settings': 'Settings',
 }
 

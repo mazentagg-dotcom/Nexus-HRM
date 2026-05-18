@@ -40,7 +40,7 @@ const quickActionColors = {
 const kpiConfig = [
   { id: 'total_employees', title: 'Total Employees', icon: 'Users', color: 'indigo' },
   { id: 'active_employees', title: 'Active Employees', icon: 'UserCheck', color: 'emerald' },
-  { id: 'total_departments', title: 'Departments', icon: 'Building2', color: 'violet' },
+  { id: 'total_departments', title: 'Departments', icon: 'Building2', color: 'purple' },
   { id: 'pending_leaves', title: 'Pending Leaves', icon: 'CalendarOff', color: 'amber' },
   { id: 'monthly_payroll', title: 'Monthly Payroll', icon: 'DollarSign', color: 'sky', prefix: '$' },
   { id: 'attendance_rate', title: 'Attendance Rate', icon: 'Activity', color: 'rose', suffix: '%' },
