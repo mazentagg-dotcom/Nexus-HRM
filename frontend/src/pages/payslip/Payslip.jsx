@@ -6,9 +6,9 @@ import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Modal from '../../components/ui/Modal'
 import { useToast } from '../../components/feedback/Toast'
-import { getPayrollRecords, getEmployees } from '../../api/hr'
+import { getPayrollRecords, getEmployees, getDeductions, createDeduction, updateDeduction, deleteDeduction } from '../../api/hr'
 import { useI18n } from '../../i18n'
-import { BRANCHES, DEDUCTION_TYPES } from '../../constants/hr'
+import { DEDUCTION_TYPES } from '../../constants/hr'
 import { DollarSign, FileText, Eye, Download, Check, Plus, Edit, Trash2 } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -139,59 +139,76 @@ function PayrollTab({ thisMonth }) {
   )
 }
 
-let deductionId = 100
 function DeductionsTab({ thisMonth }) {
   const { t } = useI18n()
+  const [loading, setLoading] = useState(true)
   const [deductions, setDeductions] = useState([])
+  const [employees, setEmployees] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editItem, setEditItem] = useState(null)
-  const [form, setForm] = useState({ employee_id: '', employee_name: '', branch: '', department: '', deduction_type: 'social_insurance', amount: '', month: new Date().toISOString().slice(0, 7), reason: '', status: 'pending' })
+  const [form, setForm] = useState({ employee_id: '', deduction_type: 'social_insurance', amount: '', month: new Date().toISOString().slice(0, 7), reason: '', status: 'active' })
   const { showToast } = useToast()
 
-  const handleSave = () => {
-    if (!form.deduction_type || !form.amount) { showToast('Fill required fields', 'error'); return }
-    if (editItem) {
-      setDeductions(prev => prev.map(d => d.id === editItem.id ? { ...d, ...form, amount: Number(form.amount) } : d))
-      showToast('Deduction updated', 'success')
-    } else {
-      const newDed = { id: String(++deductionId), ...form, amount: Number(form.amount), submitted_date: new Date().toISOString().slice(0, 10) }
-      setDeductions(prev => [newDed, ...prev])
-      showToast('Deduction added', 'success')
-    }
-    setShowModal(false)
-    setEditItem(null)
-    setForm({ employee_id: '', employee_name: '', branch: '', department: '', deduction_type: 'social_insurance', amount: '', month: new Date().toISOString().slice(0, 7), reason: '', status: 'pending' })
+  const fetchDeductions = () => {
+    setLoading(true)
+    const params = { page: 1, pageSize: 100 }
+    if (thisMonth) params.month = new Date().toISOString().slice(0, 7)
+    getDeductions(params)
+      .then(r => { setDeductions(r.data?.data?.items || r.data?.data || []) })
+      .catch(() => setDeductions([]))
+      .finally(() => setLoading(false))
   }
 
-  const handleDelete = (id) => {
-    setDeductions(prev => prev.filter(d => d.id !== id))
-    showToast('Deduction deleted', 'success')
+  useEffect(() => { fetchDeductions() }, [thisMonth])
+
+  useEffect(() => {
+    if (showModal) {
+      getEmployees({ page: 1, pageSize: 100, status: 'active' })
+        .then(r => { setEmployees(r.data?.data?.items || r.data?.data || []) })
+        .catch(() => setEmployees([]))
+    }
+  }, [showModal])
+
+  const handleSave = async () => {
+    if (!form.employee_id || !form.deduction_type || !form.amount) { showToast('Fill required fields', 'error'); return }
+    try {
+      if (editItem) {
+        await updateDeduction(editItem.id, { ...form, amount: Number(form.amount) })
+        showToast('Deduction updated', 'success')
+      } else {
+        await createDeduction({ ...form, amount: Number(form.amount) })
+        showToast('Deduction added', 'success')
+      }
+      setShowModal(false)
+      setEditItem(null)
+      setForm({ employee_id: '', deduction_type: 'social_insurance', amount: '', month: new Date().toISOString().slice(0, 7), reason: '', status: 'active' })
+      fetchDeductions()
+    } catch { showToast('Operation failed', 'error') }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteDeduction(id)
+      showToast('Deduction deleted', 'success')
+      fetchDeductions()
+    } catch { showToast('Delete failed', 'error') }
   }
 
   const openEdit = (d) => {
     setEditItem(d)
-    setForm({ employee_id: d.employee_id || '', employee_name: d.employee_name || '', branch: d.branch || '', department: d.department || '', deduction_type: d.deduction_type, amount: String(d.amount || ''), month: d.month || '', reason: d.reason || '', status: d.status || 'pending' })
+    setForm({ employee_id: d.employee_id || '', deduction_type: d.deduction_type, amount: String(d.amount || ''), month: d.month || '', reason: d.reason || '', status: d.status || 'active' })
     setShowModal(true)
   }
-
-  const filtered = thisMonth
-    ? deductions.filter(d => {
-        if (!d.month) return false
-        const m = d.month.slice(0, 7)
-        return m === new Date().toISOString().slice(0, 7)
-      })
-    : deductions
 
   return (
     <motion.div variants={fadeUp} className="space-y-4">
       <div className="flex justify-end">
-        <Button size="sm" icon={Plus} onClick={() => { setEditItem(null); setForm({ employee_id: '', employee_name: '', branch: '', department: '', deduction_type: 'social_insurance', amount: '', month: new Date().toISOString().slice(0, 7), reason: '', status: 'pending' }); setShowModal(true) }}>Add Deduction</Button>
+        <Button size="sm" icon={Plus} onClick={() => { setEditItem(null); setForm({ employee_id: '', deduction_type: 'social_insurance', amount: '', month: new Date().toISOString().slice(0, 7), reason: '', status: 'active' }); setShowModal(true) }}>Add Deduction</Button>
       </div>
       <div className="card-base overflow-hidden">
         <AnimatedTable columns={[
           { key: 'employee_name', label: t('employeeName'), render: v => <span className="font-medium text-gray-900 dark:text-gray-100">{v || '--'}</span> },
-          { key: 'branch', label: t('branch'), render: v => <span className="text-gray-500 text-xs">{v || '--'}</span> },
-          { key: 'deduction_type', label: t('deductionType'), render: v => <Badge color="purple">{v}</Badge> },
+          { key: 'deduction_type', label: t('deductionType'), render: v => <Badge color="purple">{v?.replace(/_/g, ' ')}</Badge> },
           { key: 'amount', label: t('amount'), render: v => <span className="font-medium text-rose-600">{fmt(v)}</span> },
           { key: 'month', label: t('month'), render: v => <span className="text-gray-500 text-xs">{v || '--'}</span> },
           { key: 'reason', label: t('reason'), render: v => <span className="text-gray-500 text-xs truncate max-w-[150px] block">{v || '--'}</span> },
@@ -202,17 +219,14 @@ function DeductionsTab({ thisMonth }) {
               <button onClick={(e) => { e.stopPropagation(); handleDelete(r.id) }} className="rounded p-1 text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
           )},
-        ]} data={filtered} pageSize={10} />
+        ]} data={deductions} pageSize={10} loading={loading} />
       </div>
 
       <Modal isOpen={showModal} onClose={() => { setShowModal(false); setEditItem(null) }} title={editItem ? 'Edit Deduction' : 'Add Deduction'} size="md" footer={
         <><Button variant="secondary" onClick={() => { setShowModal(false); setEditItem(null) }}>Cancel</Button><Button onClick={handleSave}>{editItem ? 'Save' : 'Add'}</Button></>
       }>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Employee Name</label><input className="input-base" placeholder="Employee name" value={form.employee_name} onChange={e => setForm(p => ({ ...p, employee_name: e.target.value }))} /></div>
-            <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('branch')}</label><select className="input-base" value={form.branch} onChange={e => setForm(p => ({ ...p, branch: e.target.value }))}><option value="">Select branch</option>{BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
-          </div>
+          <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('employeeName')}</label><select className="input-base" value={form.employee_id} onChange={e => setForm(p => ({ ...p, employee_id: e.target.value }))}><option value="">Select employee</option>{employees.map(e => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}</select></div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('deductionType')}</label><select className="input-base" value={form.deduction_type} onChange={e => setForm(p => ({ ...p, deduction_type: e.target.value }))}>{DEDUCTION_TYPES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}</select></div>
             <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('amount')}</label><input type="number" className="input-base" placeholder="0.00" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} /></div>

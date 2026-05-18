@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"nexus-hrm/internal/models"
@@ -65,31 +66,52 @@ type LoanRepo interface {
 	UpdateStatus(id, status, approvedBy string) error
 }
 
+type DeductionRepo interface {
+	FindAll(employeeID, status, deductionType, month string, page, pageSize int) ([]models.Deduction, int64, error)
+	FindByID(id string) (*models.Deduction, error)
+	Create(d *models.CreateDeductionRequest, createdBy string) error
+	Update(d *models.UpdateDeductionRequest, id string) error
+	Delete(id string) error
+}
+
+type RequestRepo interface {
+	FindAll(employeeID, status, requestType string, page, pageSize int) ([]models.Request, int64, error)
+	FindByID(id string) (*models.Request, error)
+	Create(req *models.CreateRequest) error
+	UpdateStatus(id, status, reviewedBy string) error
+	UpdateStatusWithReason(id, status, reviewedBy, reason string) error
+	Delete(id string) error
+}
+
 type NotifService interface {
 	CreateNotification(userID, title, message, ntype string, link *string) (*models.Notification, error)
 }
 
 type HRService struct {
-	deptRepo     DepartmentRepo
-	empRepo      EmployeeRepo
-	attRepo      AttendanceRepo
-	leaveRepo    LeaveRequestRepo
-	payrollRepo  PayrollRepo
-	docRepo      DocumentRepo
-	notifService NotifService
-	loanRepo     LoanRepo
+	deptRepo      DepartmentRepo
+	empRepo       EmployeeRepo
+	attRepo       AttendanceRepo
+	leaveRepo     LeaveRequestRepo
+	payrollRepo   PayrollRepo
+	docRepo       DocumentRepo
+	notifService  NotifService
+	loanRepo      LoanRepo
+	deductionRepo DeductionRepo
+	requestRepo   RequestRepo
 }
 
-func NewHRService(dept DepartmentRepo, emp EmployeeRepo, att AttendanceRepo, leave LeaveRequestRepo, payroll PayrollRepo, doc DocumentRepo, notif NotifService, loan LoanRepo) *HRService {
+func NewHRService(dept DepartmentRepo, emp EmployeeRepo, att AttendanceRepo, leave LeaveRequestRepo, payroll PayrollRepo, doc DocumentRepo, notif NotifService, loan LoanRepo, deduction DeductionRepo, request RequestRepo) *HRService {
 	return &HRService{
-		deptRepo:     dept,
-		empRepo:      emp,
-		attRepo:      att,
-		leaveRepo:    leave,
-		payrollRepo:  payroll,
-		docRepo:      doc,
-		notifService: notif,
-		loanRepo:     loan,
+		deptRepo:      dept,
+		empRepo:       emp,
+		attRepo:       att,
+		leaveRepo:     leave,
+		payrollRepo:   payroll,
+		docRepo:       doc,
+		notifService:  notif,
+		loanRepo:      loan,
+		deductionRepo: deduction,
+		requestRepo:   request,
 	}
 }
 
@@ -99,13 +121,37 @@ func (s *HRService) GetDashboard() (map[string]interface{}, error) {
 	totalDepts, _ := s.deptRepo.Count()
 	pendingLeaves, _ := s.leaveRepo.CountByStatus("pending")
 
+	now := time.Now()
+	currentMonth := fmt.Sprintf("%d-%02d", now.Year(), now.Month())
+
+	payrollItems, _, _ := s.payrollRepo.FindAll("", "", 1, 10000)
+	var monthlyPayroll float64
+	for _, pr := range payrollItems {
+		if len(pr.PayPeriodStart) >= 7 && pr.PayPeriodStart[:7] == currentMonth && pr.Status == "paid" {
+			monthlyPayroll += pr.NetPay
+		}
+	}
+
+	attItems, _, _ := s.attRepo.FindAll("", "", "", "", 1, 100000)
+	var totalAtt, presentAtt int
+	for _, a := range attItems {
+		totalAtt++
+		if a.Status == "present" || a.Status == "late" {
+			presentAtt++
+		}
+	}
+	var attendanceRate float64
+	if totalAtt > 0 {
+		attendanceRate = float64(presentAtt) / float64(totalAtt) * 100
+	}
+
 	return map[string]interface{}{
 		"total_employees":   totalEmp,
 		"active_employees":  activeEmp,
 		"total_departments": totalDepts,
 		"pending_leaves":    pendingLeaves,
-		"monthly_payroll":   0,
-		"attendance_rate":   94.2,
+		"monthly_payroll":   monthlyPayroll,
+		"attendance_rate":   math.Round(attendanceRate*10) / 10,
 	}, nil
 }
 
@@ -548,4 +594,42 @@ func (s *HRService) UpdateLoanStatus(id, status, approverID string) (*models.Loa
 		return nil, err
 	}
 	return s.loanRepo.FindByID(id)
+}
+
+func (s *HRService) GetDeductions(employeeID, status, deductionType, month string, page, pageSize int) ([]models.Deduction, int64, error) {
+	return s.deductionRepo.FindAll(employeeID, status, deductionType, month, page, pageSize)
+}
+
+func (s *HRService) CreateDeduction(req *models.CreateDeductionRequest, createdBy string) error {
+	return s.deductionRepo.Create(req, createdBy)
+}
+
+func (s *HRService) UpdateDeduction(id string, req *models.UpdateDeductionRequest) error {
+	return s.deductionRepo.Update(req, id)
+}
+
+func (s *HRService) DeleteDeduction(id string) error {
+	return s.deductionRepo.Delete(id)
+}
+
+func (s *HRService) GetRequests(employeeID, status, requestType string, page, pageSize int) ([]models.Request, int64, error) {
+	return s.requestRepo.FindAll(employeeID, status, requestType, page, pageSize)
+}
+
+func (s *HRService) CreateRequest(req *models.CreateRequest) error {
+	return s.requestRepo.Create(req)
+}
+
+func (s *HRService) ApproveRequest(id, reviewedBy string) (*models.Request, error) {
+	if err := s.requestRepo.UpdateStatus(id, "approved", reviewedBy); err != nil {
+		return nil, err
+	}
+	return s.requestRepo.FindByID(id)
+}
+
+func (s *HRService) RejectRequest(id, reviewedBy, reason string) (*models.Request, error) {
+	if err := s.requestRepo.UpdateStatusWithReason(id, "rejected", reviewedBy, reason); err != nil {
+		return nil, err
+	}
+	return s.requestRepo.FindByID(id)
 }

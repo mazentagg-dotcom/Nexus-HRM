@@ -8,6 +8,7 @@ import Textarea from '../../components/ui/Textarea'
 import { useToast } from '../../components/feedback/Toast'
 import { useI18n } from '../../i18n'
 import { REQUEST_TYPES } from '../../constants/hr'
+import { getRequests, createRequest, approveRequest, rejectRequest, getEmployees } from '../../api/hr'
 import { ClipboardList, Check, X, Eye, Plus } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -16,58 +17,86 @@ const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transi
 const statusColors = { pending: 'amber', approved: 'emerald', rejected: 'rose', cancelled: 'gray' }
 const typeColors = { leave: 'blue', vacation: 'purple', loan: 'emerald', attendance_correction: 'sky', payroll_correction: 'amber', document_request: 'indigo', other: 'gray' }
 
-let reqId = 500
-const initialRequests = [
-  { id: 'REQ-501', employee_name: 'James Wilson', employee_id: 'EMP-001', branch: 'Main Office', request_type: 'leave', submitted_date: '2026-05-15', status: 'pending', reason: 'Family event' },
-  { id: 'REQ-502', employee_name: 'Sarah Ahmed', employee_id: 'EMP-003', branch: 'South Branch', request_type: 'loan', submitted_date: '2026-05-14', status: 'pending', reason: 'Car repair' },
-  { id: 'REQ-503', employee_name: 'Mike Chen', employee_id: 'EMP-005', branch: 'West Branch', request_type: 'attendance_correction', submitted_date: '2026-05-13', status: 'approved', reason: 'System clock issue' },
-  { id: 'REQ-504', employee_name: 'Emily Davis', employee_id: 'EMP-007', branch: 'Downtown Branch', request_type: 'vacation', submitted_date: '2026-05-12', status: 'approved', reason: 'Summer vacation' },
-  { id: 'REQ-505', employee_name: 'Alex Turner', employee_id: 'EMP-002', branch: 'Corporate Headquarters', request_type: 'document_request', submitted_date: '2026-05-11', status: 'rejected', reason: 'Not applicable' },
-]
-
 export default function Requests() {
   const { t } = useI18n()
-  const [requests, setRequests] = useState(initialRequests)
+  const [loading, setLoading] = useState(true)
+  const [requests, setRequests] = useState([])
+  const [employees, setEmployees] = useState([])
   const [thisMonth, setThisMonth] = useState(false)
   const [showNewModal, setShowNewModal] = useState(false)
   const [rejectId, setRejectId] = useState(null)
   const [rejectComment, setRejectComment] = useState('')
   const [viewItem, setViewItem] = useState(null)
-  const [form, setForm] = useState({ employee_name: '', employee_id: '', branch: '', request_type: 'leave', reason: '' })
+  const [form, setForm] = useState({ employee_id: '', request_type: 'leave', reason: '' })
   const { showToast } = useToast()
+
+  const fetchRequests = () => {
+    setLoading(true)
+    getRequests({ page: 1, pageSize: 100 })
+      .then(r => { setRequests(r.data?.data?.items || r.data?.data || []) })
+      .catch(() => setRequests([]))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchRequests() }, [])
+
+  useEffect(() => {
+    if (showNewModal) {
+      getEmployees({ page: 1, pageSize: 100, status: 'active' })
+        .then(r => { setEmployees(r.data?.data?.items || r.data?.data || []) })
+        .catch(() => setEmployees([]))
+    }
+  }, [showNewModal])
 
   const filtered = thisMonth
     ? requests.filter(r => {
-        const d = new Date(r.submitted_date)
+        if (!r.created_at) return false
+        const d = new Date(r.created_at)
         const now = new Date()
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
       })
     : requests
 
-  const handleApprove = (id) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r))
-    showToast('Request approved', 'success')
+  const handleApprove = async (id) => {
+    try {
+      await approveRequest(id)
+      showToast('Request approved', 'success')
+      fetchRequests()
+    } catch { showToast('Approve failed', 'error') }
   }
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!rejectId) return
-    setRequests(prev => prev.map(r => r.id === rejectId ? { ...r, status: 'rejected' } : r))
-    showToast('Request rejected', 'success')
-    setRejectId(null)
-    setRejectComment('')
+    try {
+      await rejectRequest(rejectId, { reason: rejectComment })
+      showToast('Request rejected', 'success')
+      setRejectId(null)
+      setRejectComment('')
+      fetchRequests()
+    } catch { showToast('Reject failed', 'error') }
   }
 
-  const handleNew = () => {
-    if (!form.request_type || !form.reason) { showToast('Fill required fields', 'error'); return }
-    const newReq = { id: `REQ-${++reqId}`, ...form, submitted_date: new Date().toISOString().slice(0, 10), status: 'pending' }
-    setRequests(prev => [newReq, ...prev])
-    showToast('Request submitted', 'success')
-    setShowNewModal(false)
-    setForm({ employee_name: '', employee_id: '', branch: '', request_type: 'leave', reason: '' })
+  const handleNew = async () => {
+    if (!form.employee_id || !form.request_type || !form.reason) { showToast('Fill required fields', 'error'); return }
+    try {
+      await createRequest(form)
+      showToast('Request submitted', 'success')
+      setShowNewModal(false)
+      setForm({ employee_id: '', request_type: 'leave', reason: '' })
+      fetchRequests()
+    } catch { showToast('Submit failed', 'error') }
   }
 
   const pendingCount = requests.filter(r => r.status === 'pending').length
   const approvedCount = requests.filter(r => r.status === 'approved').length
+
+  const submittedDate = (r) => {
+    if (r.created_at) {
+      const d = new Date(r.created_at)
+      return d.toISOString().slice(0, 10)
+    }
+    return '--'
+  }
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -75,7 +104,7 @@ export default function Requests() {
         <div><h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('requests')} & {t('approvals')}</h1><p className="mt-1 text-sm text-gray-500">Review and manage employee requests and approvals.</p></div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant={thisMonth ? 'primary' : 'secondary'} onClick={() => setThisMonth(p => !p)}>{t('thisMonth')}</Button>
-          <Button size="sm" icon={Plus} onClick={() => setShowNewModal(true)}>New Request</Button>
+          <Button size="sm" icon={Plus} onClick={() => { setForm({ employee_id: '', request_type: 'leave', reason: '' }); setShowNewModal(true) }}>New Request</Button>
         </div>
       </motion.div>
 
@@ -88,11 +117,10 @@ export default function Requests() {
       <motion.div variants={fadeUp}>
         <div className="card-base overflow-hidden">
           <AnimatedTable columns={[
-            { key: 'id', label: 'Request ID', render: v => <span className="font-mono text-xs text-gray-500">{v}</span> },
-            { key: 'employee_name', label: t('employeeName'), render: v => <span className="font-medium text-gray-900 dark:text-gray-100">{v}</span> },
-            { key: 'branch', label: t('branch'), render: v => <span className="text-gray-500 text-xs">{v || '--'}</span> },
+            { key: 'id', label: 'Request ID', render: v => <span className="font-mono text-xs text-gray-500">{v?.slice(0, 8) || '--'}</span> },
+            { key: 'employee_name', label: t('employeeName'), render: v => <span className="font-medium text-gray-900 dark:text-gray-100">{v || '--'}</span> },
             { key: 'request_type', label: t('type'), render: v => <Badge color={typeColors[v] || 'gray'}>{v?.replace(/_/g, ' ')}</Badge> },
-            { key: 'submitted_date', label: t('submittedDate'), render: v => <span className="text-gray-500 text-xs">{v}</span> },
+            { key: 'created_at', label: t('submittedDate'), render: (_, r) => <span className="text-gray-500 text-xs">{submittedDate(r)}</span> },
             { key: 'status', label: t('status'), render: (v, r) => (
               <div className="flex items-center gap-1">
                 <Badge color={statusColors[v] || 'gray'}>{v}</Badge>
@@ -107,7 +135,7 @@ export default function Requests() {
             { key: 'actions', label: t('actions'), render: (_, r) => (
               <button onClick={(e) => { e.stopPropagation(); setViewItem(r) }} className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"><Eye className="h-3.5 w-3.5" /></button>
             )},
-          ]} data={filtered} pageSize={10} />
+          ]} data={filtered} pageSize={10} loading={loading} />
         </div>
       </motion.div>
 
@@ -124,10 +152,8 @@ export default function Requests() {
         <><Button variant="secondary" onClick={() => setShowNewModal(false)}>Cancel</Button><Button onClick={handleNew}>{t('submit')}</Button></>
       }>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('employeeName')}</label><input className="input-base" placeholder="Name" value={form.employee_name} onChange={e => setForm(p => ({ ...p, employee_name: e.target.value }))} /></div>
-            <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('request_type')}</label><select className="input-base" value={form.request_type} onChange={e => setForm(p => ({ ...p, request_type: e.target.value }))}>{REQUEST_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}</select></div>
-          </div>
+          <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('employeeName')}</label><select className="input-base" value={form.employee_id} onChange={e => setForm(p => ({ ...p, employee_id: e.target.value }))}><option value="">Select employee</option>{employees.map(e => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}</select></div>
+          <div><label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('type')}</label><select className="input-base" value={form.request_type} onChange={e => setForm(p => ({ ...p, request_type: e.target.value }))}>{REQUEST_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}</select></div>
           <Textarea value={form.reason} onChange={e => setForm(p => ({ ...p, reason: e.target.value }))} placeholder="Reason..." rows={3} />
         </div>
       </Modal>
@@ -136,12 +162,12 @@ export default function Requests() {
         <Modal isOpen={true} onClose={() => setViewItem(null)} title="Request Details" size="md" footer={<Button onClick={() => setViewItem(null)}>Close</Button>}>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div className="card-base p-3"><p className="text-[11px] text-gray-400">Request ID</p><p className="text-sm font-mono">{viewItem.id}</p></div>
+              <div className="card-base p-3"><p className="text-[11px] text-gray-400">Request ID</p><p className="text-sm font-mono">{viewItem.id?.slice(0, 8)}</p></div>
               <div className="card-base p-3"><p className="text-[11px] text-gray-400">{t('status')}</p><Badge color={statusColors[viewItem.status]}>{viewItem.status}</Badge></div>
-              <div className="card-base p-3"><p className="text-[11px] text-gray-400">{t('employeeName')}</p><p className="text-sm">{viewItem.employee_name}</p></div>
-              <div className="card-base p-3"><p className="text-[11px] text-gray-400">{t('branch')}</p><p className="text-sm">{viewItem.branch}</p></div>
+              <div className="card-base p-3"><p className="text-[11px] text-gray-400">{t('employeeName')}</p><p className="text-sm">{viewItem.employee_name || '--'}</p></div>
+              <div className="card-base p-3"><p className="text-[11px] text-gray-400">{t('submittedDate')}</p><p className="text-sm">{submittedDate(viewItem)}</p></div>
               <div className="card-base p-3"><p className="text-[11px] text-gray-400">{t('type')}</p><Badge color={typeColors[viewItem.request_type]}>{viewItem.request_type?.replace(/_/g, ' ')}</Badge></div>
-              <div className="card-base p-3"><p className="text-[11px] text-gray-400">{t('submittedDate')}</p><p className="text-sm">{viewItem.submitted_date}</p></div>
+              {viewItem.rejection_reason && <div className="card-base p-3"><p className="text-[11px] text-gray-400">Rejection Reason</p><p className="text-sm text-rose-600">{viewItem.rejection_reason}</p></div>}
             </div>
             <div className="card-base p-3"><p className="text-[11px] text-gray-400">{t('reason')}</p><p className="text-sm text-gray-700 dark:text-gray-300">{viewItem.reason}</p></div>
           </div>

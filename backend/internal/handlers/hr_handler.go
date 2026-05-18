@@ -612,3 +612,107 @@ func (h *HRHandler) RejectLoan(c *gin.Context) {
 	}
 	utils.Success(c, loan)
 }
+
+func (h *HRHandler) GetDeductions(c *gin.Context) {
+	p := utils.GetPagination(c)
+	employeeID := c.Query("employee_id")
+	status := c.Query("status")
+	deductionType := c.Query("deduction_type")
+	month := c.Query("month")
+
+	items, total, err := h.service.GetDeductions(employeeID, status, deductionType, month, p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load deductions")
+		return
+	}
+	utils.Paginated(c, items, total, p)
+}
+
+func (h *HRHandler) CreateDeduction(c *gin.Context) {
+	var req models.CreateDeductionRequest
+	if !utils.BindAndValidate(c, &req) {
+		return
+	}
+	userID := c.GetString("user_id")
+	if err := h.service.CreateDeduction(&req, userID); err != nil {
+		utils.Error(c, http.StatusConflict, "Conflict", err.Error())
+		return
+	}
+	utils.Success(c, map[string]string{"message": "Deduction created"})
+}
+
+func (h *HRHandler) UpdateDeduction(c *gin.Context) {
+	id := c.Param("id")
+	var req models.UpdateDeductionRequest
+	if !utils.BindAndValidate(c, &req) {
+		return
+	}
+	if err := h.service.UpdateDeduction(id, &req); err != nil {
+		utils.InternalError(c, "Failed to update deduction")
+		return
+	}
+	utils.Success(c, map[string]string{"message": "Deduction updated"})
+}
+
+func (h *HRHandler) DeleteDeduction(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.service.DeleteDeduction(id); err != nil {
+		utils.InternalError(c, "Failed to delete deduction")
+		return
+	}
+	utils.NoContent(c)
+}
+
+func (h *HRHandler) GetRequests(c *gin.Context) {
+	p := utils.GetPagination(c)
+	employeeID := c.Query("employee_id")
+	status := c.Query("status")
+	requestType := c.Query("request_type")
+
+	items, total, err := h.service.GetRequests(employeeID, status, requestType, p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load requests")
+		return
+	}
+	utils.Paginated(c, items, total, p)
+}
+
+func (h *HRHandler) CreateRequest(c *gin.Context) {
+	var req models.CreateRequest
+	if !utils.BindAndValidate(c, &req) {
+		return
+	}
+	if err := h.service.CreateRequest(&req); err != nil {
+		utils.Error(c, http.StatusConflict, "Conflict", err.Error())
+		return
+	}
+	utils.Success(c, map[string]string{"message": "Request submitted"})
+}
+
+func (h *HRHandler) ApproveRequest(c *gin.Context) {
+	id := c.Param("id")
+	userID := c.GetString("user_id")
+	req, err := h.service.ApproveRequest(id, userID)
+	if err != nil {
+		utils.InternalError(c, "Failed to approve request")
+		return
+	}
+	utils.Success(c, req)
+}
+
+func (h *HRHandler) RejectRequest(c *gin.Context) {
+	id := c.Param("id")
+	userID := c.GetString("user_id")
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if !utils.BindAndValidate(c, &req) {
+		return
+	}
+	result, err := h.service.RejectRequest(id, userID, req.Reason)
+	if err != nil {
+		utils.InternalError(c, "Failed to reject request")
+		return
+	}
+	utils.Success(c, result)
+}

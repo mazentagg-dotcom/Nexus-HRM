@@ -34,3 +34,13 @@ export const getMyPayroll = (params) => api.get('/me/payroll', { params })
 export const getMyAttendance = (params) => api.get('/me/attendance', { params })
 export const getMyLoans = (params) => api.get('/me/loans', { params })
 export const createMyLoan = (data) => api.post('/me/loans', data)
+
+export const getDeductions = (params) => api.get('/hr/deductions', { params })
+export const createDeduction = (data) => api.post('/hr/deductions', data)
+export const updateDeduction = (id, data) => api.put(`/hr/deductions/${id}`, data)
+export const deleteDeduction = (id) => api.delete(`/hr/deductions/${id}`)
+
+export const getRequests = (params) => api.get('/hr/requests', { params })
+export const createRequest = (data) => api.post('/hr/requests', data)
+export const approveRequest = (id) => api.put(`/hr/requests/${id}/approve`)
+export const rejectRequest = (id, data) => api.put(`/hr/requests/${id}/reject`, data)

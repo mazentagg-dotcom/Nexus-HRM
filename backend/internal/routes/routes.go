@@ -25,12 +25,14 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	docRepo := repositories.NewEmployeeDocumentRepository(db)
 	notifRepo := repositories.NewNotificationRepository(db)
 	loanRepo := repositories.NewLoanRepository(db)
+	deductionRepo := repositories.NewDeductionRepository(db)
+	requestRepo := repositories.NewRequestRepository(db)
 
 	authSvc := services.NewAuthService(userRepo, roleRepo, cfg.JWTSecret, cfg.JWTExpiry)
 	userSvc := services.NewUserService(userRepo)
 	roleSvc := services.NewRoleService(roleRepo)
 	notifSvc := services.NewNotificationService(notifRepo)
-	hrSvc := services.NewHRService(deptRepo, empRepo, attRepo, leaveRepo, payrollRepo, docRepo, notifSvc, loanRepo)
+	hrSvc := services.NewHRService(deptRepo, empRepo, attRepo, leaveRepo, payrollRepo, docRepo, notifSvc, loanRepo, deductionRepo, requestRepo)
 
 	authHandler := handlers.NewAuthHandler(authSvc)
 	userHandler := handlers.NewUserHandler(userSvc)
@@ -130,6 +132,14 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 			hr.GET("/loans", hrHandler.GetAllLoans)
 			hr.PUT("/loans/:id/approve", hrHandler.ApproveLoan)
 			hr.PUT("/loans/:id/reject", hrHandler.RejectLoan)
+			hr.GET("/deductions", hrHandler.GetDeductions)
+			hr.POST("/deductions", middleware.RequirePermission("hr.create"), hrHandler.CreateDeduction)
+			hr.PUT("/deductions/:id", middleware.RequirePermission("hr.edit"), hrHandler.UpdateDeduction)
+			hr.DELETE("/deductions/:id", middleware.RequirePermission("hr.delete"), hrHandler.DeleteDeduction)
+			hr.GET("/requests", hrHandler.GetRequests)
+			hr.POST("/requests", middleware.RequirePermission("hr.create"), hrHandler.CreateRequest)
+			hr.PUT("/requests/:id/approve", hrHandler.ApproveRequest)
+			hr.PUT("/requests/:id/reject", hrHandler.RejectRequest)
 			hr.GET("/managers/:id/team", hrHandler.GetEmployeesByManager)
 		}
 	}

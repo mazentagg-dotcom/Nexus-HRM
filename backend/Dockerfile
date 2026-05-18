@@ -18,7 +18,7 @@ RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 
 COPY --from=builder /app/server .
-COPY --from=builder /app/migrations/001_core.sql /app/migrations/002_hr.sql /app/migrations/003_seed.sql /app/migrations/004_enhanced.sql /app/migrations/005_loans.sql ./migrations/
+COPY --from=builder /app/migrations/001_core.sql /app/migrations/002_hr.sql /app/migrations/003_seed.sql /app/migrations/004_enhanced.sql /app/migrations/005_loans.sql /app/migrations/006_deductions_requests.sql /app/migrations/007_demo_data.sql ./migrations/
 
 EXPOSE 8120
 
