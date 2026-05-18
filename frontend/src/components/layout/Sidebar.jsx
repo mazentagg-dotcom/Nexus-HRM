@@ -13,6 +13,9 @@ import {
   ClipboardList,
   Upload,
   Folder,
+  ClipboardCheck,
+  Target,
+  Network,
   Settings,
   LogOut,
   PanelLeftClose,
@@ -30,6 +33,9 @@ const iconMap = {
   ClipboardList,
   Upload,
   Folder,
+  ClipboardCheck,
+  Target,
+  Network,
   Settings,
 }
 

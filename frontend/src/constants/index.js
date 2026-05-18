@@ -9,6 +9,9 @@ export const NAV_ITEMS = [
   { path: '/requests', label: 'Requests', icon: 'ClipboardList', permission: 'hr.view' },
   { path: '/upload', label: 'Upload Data', icon: 'Upload', permission: 'hr.view' },
   { path: '/documents', label: 'Documents', icon: 'Folder', permission: 'hr.view' },
+  { path: '/onboarding', label: 'Onboarding', icon: 'ClipboardCheck', permission: 'hr.view' },
+  { path: '/performance', label: 'Performance', icon: 'Target', permission: 'hr.view' },
+  { path: '/org-chart', label: 'Org Chart', icon: 'Network', permission: 'hr.view' },
   { path: '/settings', label: 'Settings', icon: 'Settings', permission: 'settings.view' },
 ]
 

@@ -15,6 +15,9 @@ const Payslip = lazy(() => import('../pages/payslip/Payslip'))
 const Requests = lazy(() => import('../pages/requests/Requests'))
 const UploadData = lazy(() => import('../pages/upload/UploadData'))
 const Documents = lazy(() => import('../pages/documents/Documents'))
+const Onboarding = lazy(() => import('../pages/onboarding/Onboarding'))
+const Performance = lazy(() => import('../pages/performance/Performance'))
+const OrgChart = lazy(() => import('../pages/org-chart/OrgChart'))
 const SelfService = lazy(() => import('../pages/self-service/SelfService'))
 const EmployeeDashboard = lazy(() => import('../pages/employee-dashboard/EmployeeDashboard'))
 const Settings = lazy(() => import('../pages/settings/Settings'))
@@ -64,6 +67,9 @@ const router = createBrowserRouter([
           { path: 'requests', element: <SuspensePage><Requests /></SuspensePage> },
           { path: 'upload', element: <SuspensePage><UploadData /></SuspensePage> },
           { path: 'documents', element: <SuspensePage><Documents /></SuspensePage> },
+          { path: 'onboarding', element: <SuspensePage><Onboarding /></SuspensePage> },
+          { path: 'performance', element: <SuspensePage><Performance /></SuspensePage> },
+          { path: 'org-chart', element: <SuspensePage><OrgChart /></SuspensePage> },
           { path: 'self-service', element: <SuspensePage><SelfService /></SuspensePage> },
           { path: 'employee-dashboard', element: <SuspensePage><EmployeeDashboard /></SuspensePage> },
           { path: 'settings', element: <SuspensePage><Settings /></SuspensePage> },
