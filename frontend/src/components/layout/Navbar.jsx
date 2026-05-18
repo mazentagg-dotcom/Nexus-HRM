@@ -32,7 +32,8 @@ const routeLabels = {
   '/org-chart': 'Org Chart',
   '/self-service': 'Self-Service',
   '/employee-dashboard': 'Dashboard',
-  '/settings': 'Settings',
+  '/settings': 'System Configuration',
+  '/system-configuration': 'System Configuration',
 }
 
 const quickActions = [

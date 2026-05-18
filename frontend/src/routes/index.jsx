@@ -18,6 +18,7 @@ const OrgChart = lazy(() => import('../pages/org-chart/OrgChart'))
 const SelfService = lazy(() => import('../pages/self-service/SelfService'))
 const EmployeeDashboard = lazy(() => import('../pages/employee-dashboard/EmployeeDashboard'))
 const Settings = lazy(() => import('../pages/settings/Settings'))
+const SystemConfiguration = lazy(() => import('../pages/system-configuration/SystemConfiguration'))
 const NotFound = lazy(() => import('../pages/NotFound'))
 
 function SuspensePage({ children }) {
@@ -68,7 +69,8 @@ const router = createBrowserRouter([
           { path: 'org-chart', element: <SuspensePage><OrgChart /></SuspensePage> },
           { path: 'self-service', element: <SuspensePage><SelfService /></SuspensePage> },
           { path: 'employee-dashboard', element: <SuspensePage><EmployeeDashboard /></SuspensePage> },
-          { path: 'settings', element: <SuspensePage><Settings /></SuspensePage> },
+          { path: 'system-configuration', element: <SuspensePage><SystemConfiguration /></SuspensePage> },
+          { path: 'settings', element: <Navigate to="/system-configuration" replace /> },
         ],
       },
     ],
