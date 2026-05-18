@@ -41,7 +41,6 @@ const defaultConfig = {
   companyLevelDeductions: {
     annualTaxBulkAmount: 1000000,
     annualInsuranceBulkAmount: 600000,
-    activeEmployeeCount: 100,
     frequency: 'monthly',
   },
   medicalInsuranceRules: {
@@ -75,6 +74,8 @@ function loadConfig() {
 
 export function SystemConfigProvider({ children }) {
   const [config, setConfig] = useState(loadConfig)
+  const [activeEmployeeCount, setActiveEmployeeCount] = useState(0)
+  const [totalEmployeeCount, setTotalEmployeeCount] = useState(0)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
@@ -92,8 +93,22 @@ export function SystemConfigProvider({ children }) {
     localStorage.removeItem(STORAGE_KEY)
   }, [])
 
+  const refreshEmployeeCounts = useCallback(async () => {
+    try {
+      const { default: api } = await import('../api/axios')
+      const allRes = await api.get('/hr/employees', { params: { page: 1, pageSize: 1 } })
+      const activeRes = await api.get('/hr/employees', { params: { page: 1, pageSize: 1, status: 'active' } })
+      setTotalEmployeeCount(allRes.data?.data?.total || 0)
+      setActiveEmployeeCount(activeRes.data?.data?.total || 0)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    refreshEmployeeCounts()
+  }, [refreshEmployeeCounts])
+
   return (
-    <SystemConfigContext.Provider value={{ config, updateConfig, resetConfig }}>
+    <SystemConfigContext.Provider value={{ config, updateConfig, resetConfig, activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts }}>
       {children}
     </SystemConfigContext.Provider>
   )
@@ -105,17 +120,17 @@ export function useSystemConfig() {
   return context
 }
 
-export function calcTaxPerEmployee(config) {
-  const { annualTaxBulkAmount, activeEmployeeCount, frequency } = config.companyLevelDeductions
-  if (!activeEmployeeCount) return 0
-  const perYear = annualTaxBulkAmount / activeEmployeeCount
+export function calcTaxPerEmployee(config, activeCount) {
+  const { annualTaxBulkAmount, frequency } = config.companyLevelDeductions
+  if (!activeCount) return 0
+  const perYear = annualTaxBulkAmount / activeCount
   return frequency === 'monthly' ? perYear / 12 : perYear / 52
 }
 
-export function calcInsurancePerEmployee(config) {
-  const { annualInsuranceBulkAmount, activeEmployeeCount, frequency } = config.companyLevelDeductions
-  if (!activeEmployeeCount) return 0
-  const perYear = annualInsuranceBulkAmount / activeEmployeeCount
+export function calcInsurancePerEmployee(config, activeCount) {
+  const { annualInsuranceBulkAmount, frequency } = config.companyLevelDeductions
+  if (!activeCount) return 0
+  const perYear = annualInsuranceBulkAmount / activeCount
   return frequency === 'monthly' ? perYear / 12 : perYear / 52
 }
 
@@ -162,13 +177,13 @@ export function calcLateDeduction(config, employee) {
   return dailySalary * fraction * occurrences
 }
 
-export function calcFullPayslip(config, employee) {
+export function calcFullPayslip(config, employee, activeCount) {
   const basicSalary = employee.baseSalary || 0
   const allowances = employee.allowances || 0
   const overtime = employee.overtime || 0
   const grossSalary = basicSalary + allowances + overtime
-  const taxDeduction = calcTaxPerEmployee(config)
-  const companyInsurance = calcInsurancePerEmployee(config)
+  const taxDeduction = calcTaxPerEmployee(config, activeCount)
+  const companyInsurance = calcInsurancePerEmployee(config, activeCount)
   const medicalInsurance = calcMedicalInsurance(config, employee)
   const loanDeduction = calcLoanDeduction(config, employee)
   const absenceDeduction = calcAbsenceDeduction(config, employee)
@@ -206,15 +221,15 @@ export function generateMockEmployeeFlags(name) {
   }
 }
 
-export function buildAutoDeductions(config, employee, month) {
+export function buildAutoDeductions(config, employee, month, activeCount) {
   const results = []
   const name = employee.employee_name || employee.name || ''
   const eid = employee.employee_id || employee.employee_code || '--'
 
-  const tax = calcTaxPerEmployee(config)
+  const tax = calcTaxPerEmployee(config, activeCount)
   if (tax > 0) results.push({ employee_name: name, employee_id: eid, deduction_type: 'Tax', amount: tax, month, source: 'Company-Level Auto', reason: 'Auto from annual tax bulk', status: 'active', isAuto: true })
 
-  const ins = calcInsurancePerEmployee(config)
+  const ins = calcInsurancePerEmployee(config, activeCount)
   if (ins > 0) results.push({ employee_name: name, employee_id: eid, deduction_type: 'Company Insurance', amount: ins, month, source: 'Company-Level Auto', reason: 'Auto from annual insurance bulk', status: 'active', isAuto: true })
 
   const med = calcMedicalInsurance(config, employee)

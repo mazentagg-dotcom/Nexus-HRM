@@ -22,7 +22,7 @@ const fmt = n => '$' + Number(n || 0).toLocaleString(undefined, { minimumFractio
 
 function PayrollTab({ thisMonth }) {
   const { t } = useI18n()
-  const { config } = useSystemConfig()
+  const { config, activeEmployeeCount } = useSystemConfig()
   const [loading, setLoading] = useState(true)
   const [records, setRecords] = useState([])
   const [viewModal, setViewModal] = useState(null)
@@ -66,7 +66,7 @@ function PayrollTab({ thisMonth }) {
     const name = record.employee_name || '--'
     const flags = generateMockEmployeeFlags(name)
     const empData = { ...flags, baseSalary: record.basic_salary || 0 }
-    const calc = calcFullPayslip(config, empData)
+    const calc = calcFullPayslip(config, empData, activeEmployeeCount)
 
     const lines = [
       'NEXUS HRM - PAYSLIP',
@@ -147,7 +147,7 @@ function PayrollTab({ thisMonth }) {
         const name = viewModal.employee_name || '--'
         const flags = generateMockEmployeeFlags(name)
         const empData = { ...flags, baseSalary: viewModal.basic_salary || 0 }
-        const calc = calcFullPayslip(config, empData)
+        const calc = calcFullPayslip(config, empData, activeEmployeeCount)
 
         return (
           <Modal isOpen={true} onClose={() => setViewModal(null)} title={t('payslipDetails')} size="lg" footer={
@@ -212,7 +212,7 @@ function PayrollTab({ thisMonth }) {
 
 function DeductionsTab({ thisMonth }) {
   const { t } = useI18n()
-  const { config } = useSystemConfig()
+  const { config, activeEmployeeCount } = useSystemConfig()
   const [loading, setLoading] = useState(true)
   const [deductions, setDeductions] = useState([])
   const [employees, setEmployees] = useState([])
@@ -237,7 +237,7 @@ function DeductionsTab({ thisMonth }) {
       for (const emp of emps) {
         const flags = generateMockEmployeeFlags(emp.first_name + ' ' + emp.last_name)
         const enriched = { ...flags, baseSalary: emp.base_salary || 0, employee_name: emp.first_name + ' ' + emp.last_name, employee_id: emp.employee_code || emp.id, employee_code: emp.employee_code, department: emp.department }
-        const auto = buildAutoDeductions(config, enriched, month)
+        const auto = buildAutoDeductions(config, enriched, month, activeEmployeeCount)
         autoDeds.push(...auto)
       }
       const manualDeds = apiDeds.map(d => ({ ...d, source: 'Manual', isAuto: false }))

@@ -262,16 +262,17 @@ function PayrollRulesTab() {
 }
 
 function CompanyDeductionsTab() {
-  const { config, updateConfig } = useSystemConfig()
+  const { config, updateConfig, activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts } = useSystemConfig()
   const { showToast } = useToast()
   const d = config.companyLevelDeductions
 
-  const save = () => showToast('Company deductions saved', 'success')
+  const save = () => { showToast('Company deductions saved', 'success'); refreshEmployeeCounts() }
   const upd = (data) => updateConfig('companyLevelDeductions', data)
 
-  const taxPerEmp = calcTaxPerEmployee(config)
-  const insPerEmp = calcInsurancePerEmployee(config)
-  const hasEmployees = d.activeEmployeeCount > 0
+  const taxPerEmp = calcTaxPerEmployee(config, activeEmployeeCount)
+  const insPerEmp = calcInsurancePerEmployee(config, activeEmployeeCount)
+  const hasEmployees = activeEmployeeCount > 0
+  const inactiveCount = totalEmployeeCount - activeEmployeeCount
 
   return (
     <div className="space-y-4">
@@ -286,10 +287,31 @@ function CompanyDeductionsTab() {
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Company-Level Settings</h3>
         <Row label="Annual Tax Bulk Amount"><NumInput value={d.annualTaxBulkAmount} onChange={v => upd({ annualTaxBulkAmount: v })} /></Row>
         <Row label="Annual Company Insurance Bulk Amount"><NumInput value={d.annualInsuranceBulkAmount} onChange={v => upd({ annualInsuranceBulkAmount: v })} /></Row>
-        <Row label="Active Employees Count" helper="Only active employees receive deductions"><NumInput value={d.activeEmployeeCount} onChange={v => upd({ activeEmployeeCount: v })} /></Row>
         <Row label="Payroll Frequency">
           <Sel value={d.frequency} onChange={v => upd({ frequency: v })} options={[{ value: 'monthly', label: 'Monthly (/12)' }, { value: 'weekly', label: 'Weekly (/52)' }]} />
         </Row>
+      </div>
+
+      <div className="card-base p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Calculator className="h-4 w-4 text-indigo-500" />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Employee Distribution</h3>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3 text-center">
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalEmployeeCount}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Employees</p>
+          </div>
+          <div className="rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-900/20 p-3 text-center">
+            <p className="text-2xl font-bold text-emerald-600">{activeEmployeeCount}</p>
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">Active Employees</p>
+          </div>
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3 text-center">
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{inactiveCount > 0 ? inactiveCount : 0}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Inactive (Excluded)</p>
+          </div>
+        </div>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500">Calculated automatically from active employees across all branches. This value updates automatically when employees are added, removed, activated, or deactivated.</p>
       </div>
 
       <div className="card-base p-4 space-y-3">
@@ -299,14 +321,14 @@ function CompanyDeductionsTab() {
         </div>
         {!hasEmployees ? (
           <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3">
-            <p className="text-xs text-amber-700 dark:text-amber-400">No active employees configured. Set the Active Employees Count above.</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400">No active employees found. Bulk deductions cannot be distributed.</p>
           </div>
         ) : (
           <>
-            <Row label="Tax Per Employee Per Year"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmt(d.annualTaxBulkAmount / d.activeEmployeeCount)}</span></Row>
+            <Row label="Tax Per Employee Per Year"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmt(d.annualTaxBulkAmount / activeEmployeeCount)}</span></Row>
             <Row label={`Tax Per Employee Per ${d.frequency === 'monthly' ? 'Month' : 'Week'}`}><span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{fmt(taxPerEmp)}</span></Row>
             <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
-            <Row label="Insurance Per Employee Per Year"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmt(d.annualInsuranceBulkAmount / d.activeEmployeeCount)}</span></Row>
+            <Row label="Insurance Per Employee Per Year"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmt(d.annualInsuranceBulkAmount / activeEmployeeCount)}</span></Row>
             <Row label={`Insurance Per Employee Per ${d.frequency === 'monthly' ? 'Month' : 'Week'}`}><span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{fmt(insPerEmp)}</span></Row>
             <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
             <Row label="Total Per Employee Per Period"><span className="text-lg font-bold text-gray-900 dark:text-gray-100">{fmt(taxPerEmp + insPerEmp)}</span></Row>
