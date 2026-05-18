@@ -5,6 +5,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/google/uuid"
+
 	"nexus-hrm/internal/models"
 )
 
@@ -40,6 +42,7 @@ type LeaveRequestRepo interface {
 	FindByID(id string) (*models.LeaveRequest, error)
 	Create(lr *models.LeaveRequest) error
 	UpdateStatus(id, status, approverID string) error
+	RejectWithReason(id, approverID, reason string) error
 	CountByStatus(status string) (int64, error)
 }
 
@@ -116,10 +119,35 @@ func NewHRService(dept DepartmentRepo, emp EmployeeRepo, att AttendanceRepo, lea
 }
 
 func (s *HRService) GetDashboard() (map[string]interface{}, error) {
-	totalEmp, _ := s.empRepo.Count("")
-	activeEmp, _ := s.empRepo.Count("active")
-	totalDepts, _ := s.deptRepo.Count()
-	pendingLeaves, _ := s.leaveRepo.CountByStatus("pending")
+	var errs []error
+
+	totalEmp, err := s.empRepo.Count("")
+	if err != nil {
+		errs = append(errs, err)
+	}
+	activeEmp, err := s.empRepo.Count("active")
+	if err != nil {
+		errs = append(errs, err)
+	}
+	totalDepts, err := s.deptRepo.Count()
+	if err != nil {
+		errs = append(errs, err)
+	}
+	pendingLeaves, err := s.leaveRepo.CountByStatus("pending")
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return map[string]interface{}{
+			"total_employees":   totalEmp,
+			"active_employees":  activeEmp,
+			"total_departments": totalDepts,
+			"pending_leaves":    pendingLeaves,
+			"monthly_payroll":   0.0,
+			"attendance_rate":   0.0,
+		}, nil
+	}
 
 	now := time.Now()
 	currentMonth := fmt.Sprintf("%d-%02d", now.Year(), now.Month())
@@ -255,6 +283,12 @@ func (s *HRService) CreateEmployee(req *models.CreateEmployeeRequest) (*models.E
 		PayFrequency:   req.PayFrequency,
 	}
 
+	if req.EmployeeCode != "" {
+		e.EmployeeCode = req.EmployeeCode
+	} else {
+		e.EmployeeCode = "EMP-" + uuid.New().String()[:8]
+	}
+
 	if req.DateOfBirth != nil {
 		dob := *req.DateOfBirth
 		t, _ := parseDate(dob)
@@ -263,7 +297,9 @@ func (s *HRService) CreateEmployee(req *models.CreateEmployeeRequest) (*models.E
 
 	if req.HireDate != "" {
 		t, _ := parseDate(req.HireDate)
-		e.HireDate = *t
+		if t != nil {
+			e.HireDate = *t
+		}
 	}
 
 	if err := s.empRepo.Create(e); err != nil {
@@ -400,15 +436,20 @@ func (s *HRService) ApproveLeave(id, approverID string) (*models.LeaveRequest, e
 	}
 
 	if lr != nil && lr.EmployeeID != "" {
+		emp, empErr := s.empRepo.FindByID(lr.EmployeeID)
+		notifierID := lr.EmployeeID
+		if empErr == nil && emp != nil && emp.UserID != nil {
+			notifierID = *emp.UserID
+		}
 		link := "/leave"
-		s.notifService.CreateNotification(lr.EmployeeID, "Leave Approved", fmt.Sprintf("Your %s leave request has been approved.", lr.LeaveType), "success", &link)
+		s.notifService.CreateNotification(notifierID, "Leave Approved", fmt.Sprintf("Your %s leave request has been approved.", lr.LeaveType), "success", &link)
 	}
 
 	return lr, nil
 }
 
 func (s *HRService) RejectLeave(id, approverID, reason string) (*models.LeaveRequest, error) {
-	if err := s.leaveRepo.UpdateStatus(id, "rejected", approverID); err != nil {
+	if err := s.leaveRepo.RejectWithReason(id, approverID, reason); err != nil {
 		return nil, fmt.Errorf("reject leave: %w", err)
 	}
 
@@ -418,8 +459,13 @@ func (s *HRService) RejectLeave(id, approverID, reason string) (*models.LeaveReq
 	}
 
 	if lr != nil && lr.EmployeeID != "" {
+		emp, empErr := s.empRepo.FindByID(lr.EmployeeID)
+		notifierID := lr.EmployeeID
+		if empErr == nil && emp != nil && emp.UserID != nil {
+			notifierID = *emp.UserID
+		}
 		link := "/leave"
-		s.notifService.CreateNotification(lr.EmployeeID, "Leave Rejected", fmt.Sprintf("Your %s leave request has been rejected.", lr.LeaveType), "warning", &link)
+		s.notifService.CreateNotification(notifierID, "Leave Rejected", fmt.Sprintf("Your %s leave request has been rejected.", lr.LeaveType), "warning", &link)
 	}
 
 	return lr, nil
@@ -445,7 +491,7 @@ func (s *HRService) CreatePayroll(req *models.CreatePayrollRequest) (*models.Pay
 		return nil, err
 	}
 
-	records, _, err := s.payrollRepo.FindAll(req.EmployeeID, "", 1, 1)
+	records, _, err := s.payrollRepo.FindAll(req.EmployeeID, "draft", 1, 1)
 	if err != nil || len(records) == 0 {
 		return nil, err
 	}
@@ -532,7 +578,7 @@ func timeNow() time.Time {
 }
 
 func (s *HRService) GetLeaveBalance(employeeID string) ([]map[string]interface{}, error) {
-	leaves, _, dbErr := s.leaveRepo.FindAll(employeeID, "", "", 1, 1000)
+	leaves, _, dbErr := s.leaveRepo.FindAll(employeeID, "approved", "", 1, 1000)
 	if dbErr != nil {
 		return nil, dbErr
 	}

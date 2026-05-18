@@ -100,7 +100,7 @@ export default function Employees() {
           </div>
           <div className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 p-0.5">
             <button onClick={() => setBranchFilter('')} className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${!branchFilter ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}>All Branches</button>
-            {BRANCH_OPTIONS.slice(0, 3).map(b => (
+            {BRANCH_OPTIONS.map(b => (
               <button key={b.value} onClick={() => setBranchFilter(branchFilter === b.value ? '' : b.value)} className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${branchFilter === b.value ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}>{b.label}</button>
             ))}
           </div>

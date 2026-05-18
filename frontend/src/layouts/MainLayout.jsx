@@ -36,7 +36,7 @@ export default function MainLayout() {
 
       <div
         className="flex flex-1 flex-col overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-        style={{ marginLeft: 0 }}
+        style={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
       >
         <Navbar
           onMenuToggle={() => setMobileOpen(true)}

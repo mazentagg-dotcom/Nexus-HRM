@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../hooks/useAuth'
+import { useI18n } from '../i18n'
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, Shield, Check } from 'lucide-react'
 
 const container = {
@@ -23,6 +24,7 @@ const shake = {
 }
 
 export default function Login() {
+  const { t } = useI18n()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -36,11 +38,11 @@ export default function Login() {
 
   const validate = () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address.')
+      setError(t('pleaseEnterValidEmail'))
       return false
     }
     if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters.')
+      setError(t('passwordMustBe6Chars'))
       return false
     }
     return true
@@ -62,7 +64,7 @@ export default function Login() {
     } catch (err) {
       setShakeCard(true)
       setTimeout(() => setShakeCard(false), 500)
-      setError(err.response?.data?.message || 'Invalid credentials. Please try again.')
+      setError(err.response?.data?.message || t('invalidCredentials'))
     } finally {
       setLoading(false)
     }
@@ -176,7 +178,7 @@ export default function Login() {
         </div>
       </motion.div>
 
-      <div className="flex flex-1 items-center justify-center p-8 bg-gray-50">
+      <div className="flex flex-1 items-center justify-center p-8 bg-gray-50 dark:bg-gray-900">
         <motion.div
           variants={shakeCard ? shake : container}
           initial="hidden"
@@ -187,44 +189,44 @@ export default function Login() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600">
               <Zap className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">Nexus HRM</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Nexus HRM</span>
           </div>
 
           <motion.div variants={item}>
-            <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-            <p className="mt-2 text-sm text-gray-500">Sign in to your account to continue</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('welcomeBack')}</h2>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('signInTo')}</p>
           </motion.div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <motion.div variants={item}>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('emailAddress')}</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@nexus-hrm.com"
-                  className="input-base pl-10"
+                  className="input-base pl-10 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
                 />
               </div>
             </motion.div>
 
             <motion.div variants={item}>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('password')}</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="input-base pl-10 pr-10"
+                  className="input-base pl-10 pr-10 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -237,12 +239,12 @@ export default function Login() {
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-400"
                 />
-                <span className="text-sm text-gray-500">Remember me</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('rememberMe')}</span>
               </label>
               <a href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
-                Forgot password?
+                {t('forgotPassword')}
               </a>
             </motion.div>
 
@@ -250,7 +252,7 @@ export default function Login() {
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-lg bg-rose-50 border border-rose-100 px-4 py-3 text-sm text-rose-600"
+                className="rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 px-4 py-3 text-sm text-rose-600"
               >
                 {error}
               </motion.div>
@@ -272,11 +274,11 @@ export default function Login() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Signing in...
+                    {t('signingIn')}
                   </>
                 ) : (
                   <>
-                    Sign in
+                    {t('signIn')}
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -286,7 +288,7 @@ export default function Login() {
 
           <motion.p
             variants={item}
-            className="mt-8 text-center text-sm text-gray-400"
+            className="mt-8 text-center text-sm text-gray-400 dark:text-gray-500"
           >
             Secured by Nexus HRM enterprise security
           </motion.p>

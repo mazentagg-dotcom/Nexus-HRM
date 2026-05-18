@@ -44,12 +44,7 @@ const quickActions = [
   { label: 'View Attendance', path: '/attendance', icon: 'activity' },
 ]
 
-const defaultNotifications = [
-  { id: 'nav-1', title: 'New leave request from James Wilson', time: '2 min ago', unread: true },
-  { id: 'nav-2', title: 'Payroll processed for December', time: '1 hour ago', unread: true },
-  { id: 'nav-3', title: 'Onboarding completed for Jake Cooper', time: '3 hours ago', unread: false },
-  { id: 'nav-4', title: 'Performance review cycle starting', time: '5 hours ago', unread: false },
-]
+const defaultNotifications = []
 
 function timeAgo(dateStr) {
   if (!dateStr) return ''
@@ -110,7 +105,13 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
   const handleSearch = useCallback((e) => {
     e.preventDefault()
     if (searchValue.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchValue.trim())}`)
+      const q = searchValue.trim().toLowerCase()
+      const match = Object.entries(routeLabels).find(([_, label]) => label.toLowerCase().includes(q))
+      if (match) {
+        navigate(match[0])
+      } else {
+        navigate('/employees')
+      }
       setSearchValue('')
     }
   }, [searchValue, navigate])
@@ -323,7 +324,7 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 leading-tight">{displayName}</p>
-                <p className="text-[11px] text-gray-400 leading-tight mt-0.5">Admin</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight mt-0.5">{user?.roles?.[0]?.name || user?.role || 'User'}</p>
               </div>
               <svg className="hidden md:block h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />

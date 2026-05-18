@@ -11,6 +11,7 @@ export const NAV_ITEMS = [
   { path: '/onboarding', label: 'Onboarding', icon: 'ClipboardCheck', permission: 'hr.view' },
   { path: '/performance', label: 'Performance', icon: 'Target', permission: 'hr.view' },
   { path: '/org-chart', label: 'Org Chart', icon: 'Network', permission: 'hr.view' },
+  { path: '/self-service', label: 'Self Service', icon: 'ClipboardList', permission: null, employeeOnly: true },
   { path: '/settings', label: 'Settings', icon: 'Settings', permission: 'settings.view' },
 ]
 

@@ -356,10 +356,7 @@ func (h *HRHandler) GetEmployeeDocument(c *gin.Context) {
 }
 
 func (h *HRHandler) CreateEmployeeDocument(c *gin.Context) {
-	employeeID := c.Param("employee_id")
-	if employeeID == "" {
-		employeeID = c.Query("employee_id")
-	}
+	employeeID := c.Query("employee_id")
 	if employeeID == "" {
 		utils.BadRequest(c, "Employee ID is required")
 		return

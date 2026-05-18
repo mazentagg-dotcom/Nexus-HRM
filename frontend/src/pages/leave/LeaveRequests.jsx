@@ -88,9 +88,9 @@ export default function LeaveRequests() {
           <AnimatedTable columns={[
             { key: 'employee_name', label: t('employeeName'), render: v => <span className="font-medium text-gray-900 dark:text-gray-100">{v}</span> },
             { key: 'leave_type', label: t('type'), render: v => <Badge color={typeColors[v] || 'gray'}>{v}</Badge> },
-            { key: 'start_date', label: 'From', render: v => <span className="text-gray-500 text-xs">{formatDate(v)}</span> },
-            { key: 'end_date', label: 'To', render: v => <span className="text-gray-500 text-xs">{formatDate(v)}</span> },
-            { key: 'duration_days', label: 'Days', render: v => <span className="font-medium">{v}</span> },
+            { key: 'start_date', label: t('from'), render: v => <span className="text-gray-500 text-xs">{formatDate(v)}</span> },
+            { key: 'end_date', label: t('to'), render: v => <span className="text-gray-500 text-xs">{formatDate(v)}</span> },
+            { key: 'duration_days', label: t('days'), render: v => <span className="font-medium">{v}</span> },
             { key: 'reason', label: t('reason'), render: v => <span className="text-gray-500 text-xs truncate max-w-[200px] block">{v}</span> },
             { key: 'status', label: t('status'), render: (v, r) => (
               <div className="flex items-center gap-1">
@@ -107,26 +107,26 @@ export default function LeaveRequests() {
         </div>
       </motion.div>
 
-      <Modal isOpen={showRejectConfirm} onClose={resetForm} title="Reject Leave Request" size="sm" footer={
+      <Modal isOpen={showRejectConfirm} onClose={resetForm} title={t('rejectLeaveRequest')} size="sm" footer={
         <><Button variant="secondary" onClick={resetForm}>{t('cancel')}</Button><Button loading={submitting} className="bg-rose-600 hover:bg-rose-700" onClick={handleReject}>{t('reject')}</Button></>
       }>
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Are you sure you want to reject this leave request?</p>
-          <Textarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder="Provide a reason..." rows={3} />
+          <p className="text-sm text-gray-600 dark:text-gray-400">{t('areYouSureRejectLeave')}</p>
+          <Textarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder={t('provideAReason')} rows={3} />
         </div>
       </Modal>
 
       <Modal isOpen={showLeaveModal} onClose={resetForm} title={t('newLeaveRequest')} size="md" footer={
-        <><Button variant="secondary" onClick={resetForm}>{t('cancel')}</Button><Button loading={submitting} onClick={() => { const f = document.getElementById('leave-form'); if (!f) return; const data = Object.fromEntries(new FormData(f)); const start = new Date(data.start_date); const end = new Date(data.end_date); data.duration_days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1); setSubmitting(true); createLeaveRequest(data).then(() => { showToast('Leave request submitted', 'success'); resetForm() }).catch(e => { showToast(e.response?.data?.message || 'Error', 'error'); setSubmitting(false) }) }}>{t('submit')}</Button></>
+        <><Button variant="secondary" onClick={resetForm}>{t('cancel')}</Button><Button loading={submitting} onClick={() => { const f = document.getElementById('leave-form'); if (!f) return; const data = Object.fromEntries(new FormData(f)); const start = new Date(data.start_date); const end = new Date(data.end_date); data.duration_days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1); setSubmitting(true); createLeaveRequest(data).then(() => { showToast(t('leaveRequestSubmitted'), 'success'); resetForm() }).catch(e => { showToast(e.response?.data?.message || 'Error', 'error'); setSubmitting(false) }) }}>{t('submit')}</Button></>
       }>
         <form id="leave-form" className="space-y-4">
-          <Select label={t('employeeName')} name="employee_id" options={employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }))} placeholder="Select employee" required />
-          <Select label={t('type')} name="leave_type" options={[{ value: 'annual', label: 'Annual Leave' }, { value: 'sick', label: 'Sick Leave' }, { value: 'personal', label: 'Personal Leave' }, { value: 'unpaid', label: 'Unpaid Leave' }]} placeholder="Select type" required />
+          <Select label={t('employeeName')} name="employee_id" options={employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }))} placeholder={t('selectEmployee')} required />
+          <Select label={t('type')} name="leave_type" options={[{ value: 'annual', label: t('annualLeave') }, { value: 'sick', label: t('sickLeave') }, { value: 'personal', label: t('personalLeave') }, { value: 'unpaid', label: t('unpaidLeave') }]} placeholder={t('selectType')} required />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Start Date" name="start_date" type="date" required />
-            <Input label="End Date" name="end_date" type="date" required />
+            <Input label={t('startDate')} name="start_date" type="date" required />
+            <Input label={t('endDate')} name="end_date" type="date" required />
           </div>
-          <Textarea label={t('reason')} name="reason" placeholder="Reason for leave..." rows={3} />
+          <Textarea label={t('reason')} name="reason" placeholder={t('reasonForLeave')} rows={3} />
         </form>
       </Modal>
     </motion.div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useI18n } from '../../i18n'
 import StatsCard from '../../components/StatsCard'
 import AnimatedTable from '../../components/AnimatedTable'
 import Badge from '../../components/Badge'
@@ -42,23 +43,24 @@ const quickActionGradients = {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5">
-      <div className="animate-pulse space-y-3"><div className="h-3 w-20 rounded bg-gray-100" /><div className="h-7 w-28 rounded bg-gray-100" /><div className="h-3 w-16 rounded bg-gray-50" /></div>
+    <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+      <div className="animate-pulse space-y-3"><div className="h-3 w-20 rounded bg-gray-100 dark:bg-gray-700" /><div className="h-7 w-28 rounded bg-gray-100 dark:bg-gray-700" /><div className="h-3 w-16 rounded bg-gray-50 dark:bg-gray-900/50" /></div>
     </div>
   )
 }
 
 function SectionCard({ title, icon: Icon, action, actionLabel, children }) {
+  const { t } = useI18n()
   return (
-    <motion.div variants={fadeScale} className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+    <motion.div variants={fadeScale} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-6 pt-5 pb-3">
         <div className="flex items-center gap-2">
-          {Icon && <Icon className="h-4.5 w-4.5 text-gray-400" />}
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+          {Icon && <Icon className="h-4.5 w-4.5 text-gray-400 dark:text-gray-500" />}
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
         </div>
         {action && (
           <button onClick={action} className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
-            {actionLabel || 'View all'} <ChevronRight className="h-3 w-3" />
+            {actionLabel || t('viewAll')} <ChevronRight className="h-3 w-3" />
           </button>
         )}
       </div>
@@ -83,6 +85,7 @@ function fmtMoney(n) {
 }
 
 export default function EmployeeDashboard() {
+  const { t } = useI18n()
   const [loading, setLoading] = useState(true)
   const [employee, setEmployee] = useState(null)
   const [leaveBalance, setLeaveBalance] = useState([])
@@ -141,12 +144,12 @@ export default function EmployeeDashboard() {
     setCheckingIn(true)
     try {
       await checkIn()
-      showToast('Checked in successfully', 'success')
+      showToast(t('checkedInSuccessfully'), 'success')
       const res = await getMyAttendance({ page: 1, pageSize: 10 })
       const d = res.data?.data
       setAttendance(d?.items || d || [])
     } catch (e) {
-      showToast(e.response?.data?.message || 'Failed to check in', 'error')
+      showToast(e.response?.data?.message || t('failedToCheckIn'), 'error')
     } finally { setCheckingIn(false) }
   }
 
@@ -154,36 +157,36 @@ export default function EmployeeDashboard() {
     setCheckingOut(true)
     try {
       await checkOut()
-      showToast('Checked out successfully', 'success')
+      showToast(t('checkedOutSuccessfully'), 'success')
       const res = await getMyAttendance({ page: 1, pageSize: 10 })
       const d = res.data?.data
       setAttendance(d?.items || d || [])
     } catch (e) {
-      showToast(e.response?.data?.message || 'Failed to check out', 'error')
+      showToast(e.response?.data?.message || t('failedToCheckOut'), 'error')
     } finally { setCheckingOut(false) }
   }
 
   const kpiConfig = [
     {
-      id: 'attendance_status', title: 'Today\'s Status', icon: 'UserCheck', color: 'emerald',
-      value: attSummary.status === 'not_checked_in' ? 'Not Checked In'
-        : attSummary.status === 'present' ? 'Present'
-        : attSummary.status === 'late' ? 'Late' : attSummary.status,
+      id: 'attendance_status', title: t('todaysStatus'), icon: 'UserCheck', color: 'emerald',
+      value: attSummary.status === 'not_checked_in' ? t('notCheckedIn')
+        : attSummary.status === 'present' ? t('present')
+        : attSummary.status === 'late' ? t('late') : attSummary.status,
     },
-    { id: 'sick_leaves', title: 'Sick Leaves Left', icon: 'Thermometer', color: 'sky', value: sickLeave?.remaining ?? '-', suffix: sickLeave?.remaining != null ? ' days' : '' },
-    { id: 'annual_leaves', title: 'Annual Leaves Left', icon: 'CalendarDays', color: 'purple', value: annualLeave?.remaining ?? '-', suffix: annualLeave?.remaining != null ? ' days' : '' },
-    { id: 'pending_loans', title: 'Pending Loans', icon: 'Landmark', color: 'amber', value: pendingLoans, suffix: pendingLoans === 1 ? ' request' : ' requests' },
-    { id: 'latest_payslip', title: 'Latest Payslip', icon: 'FileText', color: 'indigo', value: latestPayslip ? fmtDate(latestPayslip.pay_period_start) : 'N/A' },
-    { id: 'attendance_rate', title: 'Attendance Rate', icon: 'Activity', color: 'rose', value: attendanceRate || '-', suffix: attendanceRate ? '%' : '' },
+    { id: 'sick_leaves', title: t('sickLeavesLeft'), icon: 'Thermometer', color: 'sky', value: sickLeave?.remaining ?? '-', suffix: sickLeave?.remaining != null ? ` ${t('days')}` : '' },
+    { id: 'annual_leaves', title: t('annualLeavesLeft'), icon: 'CalendarDays', color: 'purple', value: annualLeave?.remaining ?? '-', suffix: annualLeave?.remaining != null ? ` ${t('days')}` : '' },
+    { id: 'pending_loans', title: t('pendingLoans'), icon: 'Landmark', color: 'amber', value: pendingLoans, suffix: pendingLoans === 1 ? ` ${t('request')}` : ` ${t('requests')}` },
+    { id: 'latest_payslip', title: t('latestPayslip'), icon: 'FileText', color: 'indigo', value: latestPayslip ? fmtDate(latestPayslip.pay_period_start) : 'N/A' },
+    { id: 'attendance_rate', title: t('attendanceRate'), icon: 'Activity', color: 'rose', value: attendanceRate || '-', suffix: attendanceRate ? '%' : '' },
   ]
 
   const quickActions = [
-    { label: 'Apply for Leave', desc: 'Submit request', icon: Calendar, color: 'indigo', path: '/self-service', tab: 'leave' },
-    { label: 'Apply Sick Leave', desc: 'Medical leave', icon: Thermometer, color: 'sky', path: '/self-service', tab: 'leave' },
-    { label: 'Request Loan', desc: 'Apply for loan', icon: Landmark, color: 'emerald', path: '/self-service', tab: 'loans' },
-    { label: 'View Payslips', desc: 'Pay history', icon: DollarSign, color: 'amber', path: '/self-service', tab: 'payslips' },
-    { label: 'Update Profile', desc: 'Edit info', icon: User, color: 'purple', path: '/self-service', tab: 'profile' },
-    { label: 'Contact HR', desc: 'Get help', icon: ClipboardCheck, color: 'rose', path: '/self-service' },
+    { label: t('applyForLeave'), desc: t('submitRequest'), icon: Calendar, color: 'indigo', path: '/self-service', tab: 'leave' },
+    { label: t('applySickLeave'), desc: t('medicalLeave'), icon: Thermometer, color: 'sky', path: '/self-service', tab: 'leave' },
+    { label: t('requestLoan'), desc: t('applyForLoanDesc'), icon: Landmark, color: 'emerald', path: '/self-service', tab: 'loans' },
+    { label: t('viewPayslips'), desc: t('payHistory'), icon: DollarSign, color: 'amber', path: '/self-service', tab: 'payslips' },
+    { label: t('updateProfile'), desc: t('editInfo'), icon: User, color: 'purple', path: '/self-service', tab: 'profile' },
+    { label: t('contactHr'), desc: t('getHelp'), icon: ClipboardCheck, color: 'rose', path: '/self-service' },
   ]
 
   const handleQuickAction = (action) => {
@@ -198,20 +201,20 @@ export default function EmployeeDashboard() {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={fadeUp} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('myDashboard')}</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {employee
-              ? `Welcome back, ${employee.first_name}! Here's your personal overview.`
-              : 'Loading your dashboard...'}
+              ? `${t('welcomeBackName')} ${employee.first_name}! ${t('heresYourPersonalOverview')}`
+              : t('loadingDashboard')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {!attSummary.checkIn ? (
-            <Button size="sm" icon={Clock} loading={checkingIn} onClick={handleCheckIn} variant="primary">Check In</Button>
+            <Button size="sm" icon={Clock} loading={checkingIn} onClick={handleCheckIn} variant="primary">{t('checkIn')}</Button>
           ) : !attSummary.checkOut ? (
-            <Button size="sm" icon={Clock} loading={checkingOut} onClick={handleCheckOut} variant="secondary">Check Out</Button>
+            <Button size="sm" icon={Clock} loading={checkingOut} onClick={handleCheckOut} variant="secondary">{t('checkOut')}</Button>
           ) : (
-            <Badge color="emerald">Checked out for today</Badge>
+            <Badge color="emerald">{t('checkedOutForToday')}</Badge>
           )}
         </div>
       </motion.div>
@@ -242,103 +245,103 @@ export default function EmployeeDashboard() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <SectionCard
-            title="My Attendance"
+            title={t('myAttendance')}
             icon={Activity}
             action={() => navigate('/self-service', { state: { tab: 'attendance' } })}
-            actionLabel="View all"
+            actionLabel={t('viewAll')}
           >
             {loading ? (
-              <div className="flex items-center justify-center py-8"><div className="animate-pulse text-gray-400">Loading...</div></div>
+              <div className="flex items-center justify-center py-8"><div className="animate-pulse text-gray-400 dark:text-gray-500">{t('loadingText')}</div></div>
             ) : (
               <>
                 <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div className="rounded-lg bg-emerald-50 p-3">
-                    <p className="text-[11px] text-emerald-600 font-medium">Check In</p>
-                    <p className="text-sm font-semibold text-emerald-700">{attSummary.checkIn ? fmtTime(attSummary.checkIn) : '---'}</p>
+                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 p-3">
+                    <p className="text-[11px] text-emerald-600 font-medium">{t('clockIn')}</p>
+                    <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{attSummary.checkIn ? fmtTime(attSummary.checkIn) : '---'}</p>
                   </div>
-                  <div className="rounded-lg bg-blue-50 p-3">
-                    <p className="text-[11px] text-blue-600 font-medium">Check Out</p>
-                    <p className="text-sm font-semibold text-blue-700">{attSummary.checkOut ? fmtTime(attSummary.checkOut) : '---'}</p>
+                  <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
+                    <p className="text-[11px] text-blue-600 font-medium">{t('clockOut')}</p>
+                    <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">{attSummary.checkOut ? fmtTime(attSummary.checkOut) : '---'}</p>
                   </div>
-                  <div className="rounded-lg bg-purple-50 p-3">
-                    <p className="text-[11px] text-purple-600 font-medium">Hours Today</p>
-                    <p className="text-sm font-semibold text-purple-700">{attSummary.workHours ? `${attSummary.workHours}h` : '---'}</p>
+                  <div className="rounded-lg bg-purple-50 dark:bg-purple-900/20 p-3">
+                    <p className="text-[11px] text-purple-600 font-medium">{t('hoursToday')}</p>
+                    <p className="text-sm font-semibold text-purple-700 dark:text-purple-400">{attSummary.workHours ? `${attSummary.workHours}h` : '---'}</p>
                   </div>
-                  <div className="rounded-lg bg-amber-50 p-3">
-                    <p className="text-[11px] text-amber-600 font-medium">Status</p>
-                    <p className="text-sm font-semibold text-amber-700 capitalize">{attSummary.status.replace(/_/g, ' ')}</p>
+                  <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3">
+                    <p className="text-[11px] text-amber-600 font-medium">{t('status')}</p>
+                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-400 capitalize">{attSummary.status.replace(/_/g, ' ')}</p>
                   </div>
                 </div>
                 <AnimatedTable
                   columns={[
-                    { key: 'date', label: 'Date', render: v => <span className="text-gray-900">{fmtDate(v)}</span> },
-                    { key: 'check_in', label: 'Check In', render: v => <span className="text-gray-600">{v ? fmtTime(v) : '-'}</span> },
-                    { key: 'check_out', label: 'Check Out', render: v => <span className="text-gray-600">{v ? fmtTime(v) : '-'}</span> },
-                    { key: 'work_hours', label: 'Hours', render: v => <span className="font-medium">{v ? `${v}h` : '-'}</span> },
-                    { key: 'status', label: 'Status', render: v => <Badge color={statusColors[v] || 'gray'}>{v ? v.replace(/_/g, ' ') : '-'}</Badge> },
+                    { key: 'date', label: t('date'), render: v => <span className="text-gray-900 dark:text-gray-100">{fmtDate(v)}</span> },
+                    { key: 'check_in', label: t('clockIn'), render: v => <span className="text-gray-600 dark:text-gray-400">{v ? fmtTime(v) : '-'}</span> },
+                    { key: 'check_out', label: t('clockOut'), render: v => <span className="text-gray-600 dark:text-gray-400">{v ? fmtTime(v) : '-'}</span> },
+                    { key: 'work_hours', label: t('totalHours'), render: v => <span className="font-medium">{v ? `${v}h` : '-'}</span> },
+                    { key: 'status', label: t('status'), render: v => <Badge color={statusColors[v] || 'gray'}>{v ? v.replace(/_/g, ' ') : '-'}</Badge> },
                   ]}
                   data={attendance || []}
                   pageSize={5}
-                  emptyMessage="No attendance records yet"
+                  emptyMessage={t('noAttendanceRecordsYet')}
                 />
               </>
             )}
           </SectionCard>
 
           <SectionCard
-            title="Sick Leave Balance"
+            title={t('sickLeaveBalance')}
             icon={Thermometer}
             action={() => navigate('/self-service', { state: { tab: 'leave' } })}
-            actionLabel="View all"
+            actionLabel={t('viewAll')}
           >
             {loading ? (
-              <div className="flex items-center justify-center py-8"><div className="animate-pulse text-gray-400">Loading...</div></div>
+              <div className="flex items-center justify-center py-8"><div className="animate-pulse text-gray-400 dark:text-gray-500">{t('loadingText')}</div></div>
             ) : sickLeave ? (
               <>
                 <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-[11px] text-gray-500 font-medium">Total</p>
-                    <p className="text-sm font-semibold text-gray-900">{sickLeave.total} days</p>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-900/50 p-3">
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">{t('total')}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{sickLeave.total} {t('days')}</p>
                   </div>
-                  <div className="rounded-lg bg-rose-50 p-3">
-                    <p className="text-[11px] text-rose-600 font-medium">Used</p>
-                    <p className="text-sm font-semibold text-rose-700">{sickLeave.used} days</p>
+                  <div className="rounded-lg bg-rose-50 dark:bg-rose-900/20 p-3">
+                    <p className="text-[11px] text-rose-600 font-medium">{t('used')}</p>
+                    <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">{sickLeave.used} {t('days')}</p>
                   </div>
-                  <div className="rounded-lg bg-emerald-50 p-3">
-                    <p className="text-[11px] text-emerald-600 font-medium">Remaining</p>
-                    <p className="text-sm font-semibold text-emerald-700">{sickLeave.remaining} days</p>
+                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 p-3">
+                    <p className="text-[11px] text-emerald-600 font-medium">{t('remaining') || 'Remaining'}</p>
+                    <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{sickLeave.remaining} {t('days')}</p>
                   </div>
-                  <div className="rounded-lg bg-amber-50 p-3">
-                    <p className="text-[11px] text-amber-600 font-medium">Pending</p>
-                    <p className="text-sm font-semibold text-amber-700">
-                      {leaves.filter(l => l.leave_type === 'sick' && l.status === 'pending').length} requests
+                  <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3">
+                    <p className="text-[11px] text-amber-600 font-medium">{t('pending')}</p>
+                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                      {leaves.filter(l => l.leave_type === 'sick' && l.status === 'pending').length} {t('pendingRequests')}
                     </p>
                   </div>
                 </div>
                 <AnimatedTable
                   columns={[
-                    { key: 'created_at', label: 'Request Date', render: v => <span className="text-gray-500 text-xs">{fmtDate(v)}</span> },
-                    { key: 'start_date', label: 'From', render: v => <span className="text-gray-500 text-xs">{fmtDate(v)}</span> },
-                    { key: 'end_date', label: 'To', render: v => <span className="text-gray-500 text-xs">{fmtDate(v)}</span> },
-                    { key: 'duration_days', label: 'Days', render: v => <span className="font-medium">{v}</span> },
-                    { key: 'status', label: 'Status', render: v => <Badge color={statusColors[v] || 'gray'}>{v}</Badge> },
+                    { key: 'created_at', label: t('submittedDate'), render: v => <span className="text-gray-500 dark:text-gray-400 text-xs">{fmtDate(v)}</span> },
+                    { key: 'start_date', label: t('from'), render: v => <span className="text-gray-500 dark:text-gray-400 text-xs">{fmtDate(v)}</span> },
+                    { key: 'end_date', label: t('to'), render: v => <span className="text-gray-500 dark:text-gray-400 text-xs">{fmtDate(v)}</span> },
+                    { key: 'duration_days', label: t('days'), render: v => <span className="font-medium">{v}</span> },
+                    { key: 'status', label: t('status'), render: v => <Badge color={statusColors[v] || 'gray'}>{v}</Badge> },
                   ]}
                   data={leaves.filter(l => l.leave_type === 'sick') || []}
                   pageSize={5}
-                  emptyMessage="No sick leave requests"
+                  emptyMessage={t('noSickLeaveRequests')}
                 />
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+              <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500">
                 <Thermometer className="h-8 w-8 mb-2 opacity-50" />
-                <p className="text-sm">No leave balance data available</p>
+                <p className="text-sm">{t('noLeaveBalanceData')}</p>
               </div>
             )}
           </SectionCard>
         </div>
 
         <div className="space-y-6">
-          <SectionCard title="Quick Actions" icon={AlertCircle}>
+          <SectionCard title={t('quickActions')} icon={AlertCircle}>
             <div className="grid grid-cols-2 gap-2">
               {quickActions.map((action, i) => {
                 const gradient = quickActionGradients[action.color] || quickActionGradients.indigo
@@ -357,8 +360,8 @@ export default function EmployeeDashboard() {
                       <action.icon className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-900">{action.label}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{action.desc}</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{action.label}</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{action.desc}</p>
                     </div>
                   </motion.button>
                 )
@@ -367,39 +370,39 @@ export default function EmployeeDashboard() {
           </SectionCard>
 
           <SectionCard
-            title="My Loans"
+            title={t('myLoans')}
             icon={Landmark}
             action={() => navigate('/self-service', { state: { tab: 'loans' } })}
-            actionLabel="View all"
+            actionLabel={t('viewAll')}
           >
             {loading ? (
-              <div className="flex items-center justify-center py-6"><div className="animate-pulse text-gray-400">Loading...</div></div>
+              <div className="flex items-center justify-center py-6"><div className="animate-pulse text-gray-400 dark:text-gray-500">{t('loadingText')}</div></div>
             ) : (
               <>
                 {activeLoans.length > 0 && (
                   <div className="mb-3 grid grid-cols-1 gap-2">
-                    <div className="flex items-center justify-between rounded-lg bg-indigo-50 px-3 py-2">
-                      <span className="text-[11px] text-indigo-600 font-medium">Active Loan</span>
-                      <span className="text-sm font-bold text-indigo-700">{fmtMoney(activeLoanTotal)}</span>
+                    <div className="flex items-center justify-between rounded-lg bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2">
+                      <span className="text-[11px] text-indigo-600 font-medium">{t('activeLoan')}</span>
+                      <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">{fmtMoney(activeLoanTotal)}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2">
-                      <span className="text-[11px] text-amber-600 font-medium">Monthly Deduction</span>
-                      <span className="text-sm font-bold text-amber-700">{fmtMoney(monthlyDeduction)}</span>
+                    <div className="flex items-center justify-between rounded-lg bg-amber-50 dark:bg-amber-900/20 px-3 py-2">
+                      <span className="text-[11px] text-amber-600 font-medium">{t('monthlyDeduction')}</span>
+                      <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{fmtMoney(monthlyDeduction)}</span>
                     </div>
                   </div>
                 )}
                 <div className="space-y-2">
                   {(loans || []).slice(0, 5).map(loan => (
-                    <div key={loan.id} className="flex items-center justify-between rounded-lg border border-gray-50 p-2.5">
+                    <div key={loan.id} className="flex items-center justify-between rounded-lg border border-gray-50 dark:border-gray-700 p-2.5">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{fmtMoney(loan.amount)}</p>
-                        <p className="text-[11px] text-gray-400">{fmtDate(loan.created_at)}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmtMoney(loan.amount)}</p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500">{fmtDate(loan.created_at)}</p>
                       </div>
                       <Badge color={statusColors[loan.status] || 'gray'}>{loan.status}</Badge>
                     </div>
                   ))}
                   {(!loans || loans.length === 0) && (
-                    <p className="text-center text-sm text-gray-400 py-4">No loan applications</p>
+                    <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-4">{t('noLoanApplications')}</p>
                   )}
                 </div>
               </>
@@ -409,36 +412,36 @@ export default function EmployeeDashboard() {
       </div>
 
       <SectionCard
-        title="Payslips"
+        title={t('payslips')}
         icon={FileText}
         action={() => navigate('/self-service', { state: { tab: 'payslips' } })}
-        actionLabel="View all"
+        actionLabel={t('viewAll')}
       >
         {loading ? (
-          <div className="flex items-center justify-center py-8"><div className="animate-pulse text-gray-400">Loading...</div></div>
+          <div className="flex items-center justify-center py-8"><div className="animate-pulse text-gray-400 dark:text-gray-500">{t('loadingText')}</div></div>
         ) : (
           <AnimatedTable
             columns={[
-              { key: 'pay_period_start', label: 'Month', render: v => <span className="font-medium text-gray-900">{fmtDate(v)}</span> },
-              { key: 'basic_salary', label: 'Basic Salary', render: v => <span className="text-gray-600">{fmtMoney(v)}</span> },
-              { key: 'total_deductions', label: 'Deductions', render: v => <span className="text-rose-600">{fmtMoney(v)}</span> },
-              { key: 'bonus', label: 'Bonuses', render: v => <span className="text-emerald-600">{fmtMoney(v)}</span> },
-              { key: 'net_pay', label: 'Net Salary', render: v => <span className="font-bold text-gray-900">{fmtMoney(v)}</span> },
+              { key: 'pay_period_start', label: t('month'), render: v => <span className="font-medium text-gray-900 dark:text-gray-100">{fmtDate(v)}</span> },
+              { key: 'basic_salary', label: t('basicSalary'), render: v => <span className="text-gray-600 dark:text-gray-400">{fmtMoney(v)}</span> },
+              { key: 'total_deductions', label: t('deductions'), render: v => <span className="text-rose-600">{fmtMoney(v)}</span> },
+              { key: 'bonus', label: t('bonuses'), render: v => <span className="text-emerald-600">{fmtMoney(v)}</span> },
+              { key: 'net_pay', label: t('netSalary'), render: v => <span className="font-bold text-gray-900 dark:text-gray-100">{fmtMoney(v)}</span> },
               {
-                key: 'status', label: 'Action',
+                key: 'status', label: t('action'),
                 render: (_, row) => (
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => showToast('Payslip viewer coming soon', 'info')}
-                      className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+                      onClick={() => showToast(t('payslipViewerComingSoon'), 'info')}
+                      className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                     >
-                      View
+                      {t('view')}
                     </button>
                     <button
-                      onClick={() => showToast('Download coming soon', 'info')}
-                      className="rounded px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                      onClick={() => showToast(t('downloadComingSoon'), 'info')}
+                      className="rounded px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
-                      Download
+                      {t('download')}
                     </button>
                   </div>
                 ),
@@ -446,7 +449,7 @@ export default function EmployeeDashboard() {
             ]}
             data={payroll || []}
             pageSize={5}
-            emptyMessage="No payslips available"
+            emptyMessage={t('noPayslipsAvailable')}
           />
         )}
       </SectionCard>

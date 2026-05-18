@@ -21,6 +21,12 @@ export default function Tabs({
     updateIndicator(activeTab)
   }, [activeTab, tabs])
 
+  useEffect(() => {
+    const handleResize = () => updateIndicator(activeTab)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [activeTab])
+
   return (
     <div className="relative border-b border-gray-200 dark:border-gray-700">
       <nav className="flex gap-0 -mb-px">

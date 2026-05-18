@@ -12,7 +12,6 @@ var (
 	ErrForbidden          = errors.New("forbidden")
 	ErrNotFound           = errors.New("not found")
 	ErrValidation         = errors.New("validation error")
-	ErrInsufficientStock  = errors.New("insufficient stock")
 	ErrAlreadyExists      = errors.New("already exists")
 	ErrConflict           = errors.New("conflict")
 )

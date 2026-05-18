@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
 import { useI18n } from '../../i18n'
@@ -26,6 +26,13 @@ export default function Settings() {
     absenceDeductionType: 'fixed',
     defaultPayrollDay: 28,
   })
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('nexus_payroll_settings')
+      if (saved) setPayrollSettings(prev => ({ ...prev, ...JSON.parse(saved) }))
+    } catch {}
+  }, [])
 
   const handleSave = () => {
     localStorage.setItem('nexus_payroll_settings', JSON.stringify(payrollSettings))

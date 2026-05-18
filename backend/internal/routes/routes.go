@@ -127,6 +127,7 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 			hr.POST("/payroll", middleware.RequirePermission("hr.create"), hrHandler.CreatePayrollRecord)
 			hr.PUT("/payroll/:id", middleware.RequirePermission("hr.edit"), hrHandler.UpdatePayrollRecord)
 			hr.GET("/documents", hrHandler.GetEmployeeDocuments)
+			hr.GET("/documents/:id", hrHandler.GetEmployeeDocument)
 			hr.POST("/documents", middleware.RequirePermission("hr.create"), hrHandler.CreateEmployeeDocument)
 			hr.DELETE("/documents/:id", middleware.RequirePermission("hr.delete"), hrHandler.DeleteEmployeeDocument)
 			hr.GET("/loans", hrHandler.GetAllLoans)

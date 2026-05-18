@@ -1,7 +1,6 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
-import { useStore } from '../../store'
 import { NAV_ITEMS } from '../../constants/index'
 import {
   LayoutDashboard,

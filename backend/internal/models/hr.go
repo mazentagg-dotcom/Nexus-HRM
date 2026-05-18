@@ -79,6 +79,7 @@ type CreateEmployeeRequest struct {
 	FirstName      string   `json:"first_name" binding:"required"`
 	LastName       string   `json:"last_name" binding:"required"`
 	Email          string   `json:"email" binding:"required,email"`
+	EmployeeCode   string   `json:"employee_code"`
 	Phone          *string  `json:"phone"`
 	Gender         *string  `json:"gender"`
 	DateOfBirth    *string  `json:"date_of_birth"`

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -7,7 +7,7 @@ function SkeletonRow({ cols }) {
     <tr>
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="px-4 py-3">
-          <div className="h-4 rounded bg-gray-100 animate-pulse"></div>
+          <div className="h-4 rounded bg-gray-100 dark:bg-gray-700 animate-pulse"></div>
         </td>
       ))}
     </tr>
@@ -25,6 +25,8 @@ export default function AnimatedTable({
   const [sortCol, setSortCol] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
   const [page, setPage] = useState(0)
+
+  useEffect(() => { setPage(0) }, [data])
 
   const sorted = useMemo(() => {
     if (!sortCol) return data
@@ -54,17 +56,17 @@ export default function AnimatedTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-card">
+    <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/50">
+            <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => col.sortable !== false && handleSort(col.key)}
-                  className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 ${
-                    col.sortable !== false ? 'cursor-pointer select-none hover:text-gray-700' : ''
+                  className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 ${
+                    col.sortable !== false ? 'cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200' : ''
                   }`}
                 >
                   <div className="flex items-center gap-1">
@@ -83,12 +85,12 @@ export default function AnimatedTable({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={columns.length} />)
             ) : paged.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-gray-400">
+                <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-gray-400 dark:text-gray-500">
                   {emptyMessage}
                 </td>
               </tr>
@@ -103,11 +105,11 @@ export default function AnimatedTable({
                     transition={{ duration: 0.2, delay: i * 0.03 }}
                     onClick={() => onRowClick?.(row)}
                     className={`transition-colors ${
-                      onRowClick ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50/50'
+                      onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' : 'hover:bg-gray-50/50 dark:hover:bg-gray-700/30'
                     }`}
                   >
                     {columns.map((col) => (
-                      <td key={col.key} className="px-4 py-3.5 text-sm text-gray-600">
+                      <td key={col.key} className="px-4 py-3.5 text-sm text-gray-600 dark:text-gray-300">
                         {col.render ? col.render(row[col.key], row) : row[col.key]}
                       </td>
                     ))}
@@ -120,33 +122,38 @@ export default function AnimatedTable({
       </div>
 
       {!loading && totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-          <p className="text-xs text-gray-400">
+        <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 px-4 py-3">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}
           </p>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-30"
+              className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            {Array.from({ length: totalPages }, (_, i) => (
+            {(() => {
+              let start = Math.max(0, page - 3)
+              let end = Math.min(totalPages, start + 7)
+              if (end - start < 7) start = Math.max(0, end - 7)
+              return Array.from({ length: end - start }, (_, i) => (
               <button
-                key={i}
-                onClick={() => setPage(i)}
+                key={start + i}
+                onClick={() => setPage(start + i)}
                 className={`min-w-8 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
-                  page === i ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:bg-gray-100'
+                  page === start + i ? 'bg-indigo-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
-                {i + 1}
+                {start + i + 1}
               </button>
-            ))}
+              ))
+            })()}
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
-              className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-30"
+              className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

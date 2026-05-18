@@ -9,7 +9,7 @@ import { getHRDashboard, getLeaveRequests } from '../api/hr'
 import { useI18n } from '../i18n'
 import {
   Users, UserCheck, Building2, CalendarOff, DollarSign, Activity,
-  ChevronRight, UserPlus, Calendar, Clock, DollarSign as DollarIcon, ClipboardCheck,
+  ChevronRight, UserPlus, Calendar, Clock, ClipboardCheck,
 } from 'lucide-react'
 
 const iconMap = { Users, UserCheck, Building2, CalendarOff, DollarSign, Activity }
@@ -46,18 +46,18 @@ export default function Dashboard() {
   const [thisMonth, setThisMonth] = useState(false)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Promise.all([
-        getHRDashboard().then((res) => res.data?.data || {}).catch(() => ({})),
-        getLeaveRequests({ page: 1, pageSize: 5 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
-      ]).then(([dashboard, leaveData]) => {
-        setApiData(dashboard)
-        setLeaves(leaveData)
-      }).finally(() => setLoading(false))
-    }, 600)
-    return () => clearTimeout(timer)
-  }, [])
+  const fetchDashboard = (thisMonthFilter) => {
+    setLoading(true)
+    Promise.all([
+      getHRDashboard().then((res) => res.data?.data || {}).catch(() => ({})),
+      getLeaveRequests({ page: 1, pageSize: 5 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
+    ]).then(([dashboard, leaveData]) => {
+      setApiData(dashboard)
+      setLeaves(leaveData)
+    }).finally(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchDashboard(thisMonth) }, [thisMonth])
 
   const kpiConfig = [
     { id: 'total_employees', title: t('totalEmployees'), icon: 'Users', color: 'indigo' },
@@ -80,7 +80,7 @@ export default function Dashboard() {
   const quickActions = [
     { label: t('addEmployee'), desc: 'New hire', icon: UserPlus, color: 'indigo', path: '/employees' },
     { label: t('newLeaveRequest'), desc: 'Submit request', icon: Calendar, color: 'sky', path: '/leave' },
-    { label: t('runPayroll'), desc: 'Process payroll', icon: DollarIcon, color: 'emerald', path: '/payslip' },
+    { label: t('runPayroll'), desc: 'Process payroll', icon: DollarSign, color: 'emerald', path: '/payslip' },
     { label: t('attendance'), desc: 'View today', icon: Clock, color: 'amber', path: '/attendance' },
     { label: t('onboarding'), desc: 'New hires', icon: ClipboardCheck, color: 'purple', path: '/onboarding' },
     { label: t('selfService'), desc: 'Employee portal', icon: UserCheck, color: 'rose', path: '/self-service' },

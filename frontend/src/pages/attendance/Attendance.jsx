@@ -27,17 +27,18 @@ export default function Attendance() {
 
   const filtered = thisMonth
     ? records.filter(r => {
+        if (!r.date) return false
         const d = new Date(r.date)
+        if (isNaN(d.getTime())) return false
         const now = new Date()
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
       })
     : records
 
   const today = new Date().toISOString().slice(0, 10)
-  const todayRecords = records.filter(a => a.date === today)
-  const present = records.filter(a => a.status === 'present').length
-  const late = records.filter(a => a.status === 'late').length
-  const absent = records.filter(a => a.status === 'absent').length
+  const present = filtered.filter(a => a.status === 'present').length
+  const late = filtered.filter(a => a.status === 'late').length
+  const absent = filtered.filter(a => a.status === 'absent').length
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">

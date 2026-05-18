@@ -112,7 +112,8 @@ func (r *DepartmentRepository) Create(d *models.Department) error {
 
 func (r *DepartmentRepository) Update(d *models.Department) error {
 	q := `UPDATE departments SET name = COALESCE($2, name), code = COALESCE($3, code),
-		description = COALESCE($4, description), parent_id = $5, manager_id = $6,
+		description = COALESCE($4, description),
+		parent_id = COALESCE($5, parent_id), manager_id = COALESCE($6, manager_id),
 		budget = COALESCE($7, budget), is_active = COALESCE($8, is_active)
 		WHERE id = $1`
 
@@ -252,6 +253,7 @@ func (r *EmployeeRepository) FindAll(search, department, status string, page, pa
 		e.EmergencyRelation = toStringPtr(emerRel)
 		e.Bio = toStringPtr(bio)
 		e.Notes = toStringPtr(notes)
+		e.ConfirmationDate = nullTimeToTimePtr(confirmationDate)
 
 		items = append(items, e)
 	}
@@ -553,7 +555,9 @@ func (r *AttendanceRepository) FindAll(employeeID, dateFrom, dateTo, status stri
 
 	whereClause := " WHERE " + strings.Join(where, " AND ")
 
-	r.db.QueryRow(baseCount+whereClause, args...).Scan(&total)
+	if err := r.db.QueryRow(baseCount+whereClause, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count attendance: %w", err)
+	}
 
 	listQ := baseList + whereClause + " ORDER BY a.date DESC, a.created_at DESC"
 	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)
@@ -711,7 +715,9 @@ func (r *LeaveRequestRepository) FindAll(employeeID, status, leaveType string, p
 
 	whereClause := " WHERE " + strings.Join(where, " AND ")
 
-	r.db.QueryRow(baseCount+whereClause, args...).Scan(&total)
+	if err := r.db.QueryRow(baseCount+whereClause, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count leave requests: %w", err)
+	}
 
 	listQ := baseList + whereClause + " ORDER BY lr.created_at DESC"
 	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)
@@ -783,6 +789,12 @@ func (r *LeaveRequestRepository) UpdateStatus(id, status, approverID string) err
 	return err
 }
 
+func (r *LeaveRequestRepository) RejectWithReason(id, approverID, reason string) error {
+	q := `UPDATE leave_requests SET status = $2, approver_id = $3, rejection_reason = $4, approved_at = NULL WHERE id = $1`
+	_, err := r.db.Exec(q, id, "rejected", approverID, reason)
+	return err
+}
+
 func (r *LeaveRequestRepository) CountByStatus(status string) (int64, error) {
 	var count int64
 	err := r.db.QueryRow("SELECT COUNT(*) FROM leave_requests WHERE status = $1", status).Scan(&count)
@@ -830,7 +842,9 @@ func (r *PayrollRepository) FindAll(employeeID, status string, page, pageSize in
 
 	whereClause := " WHERE " + strings.Join(where, " AND ")
 
-	r.db.QueryRow(baseCount+whereClause, args...).Scan(&total)
+	if err := r.db.QueryRow(baseCount+whereClause, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count payroll records: %w", err)
+	}
 
 	listQ := baseList + whereClause + " ORDER BY pr.pay_period_start DESC, pr.created_at DESC"
 	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)
@@ -1010,7 +1024,9 @@ func (r *EmployeeDocumentRepository) FindAll(employeeID, docType string, page, p
 
 	whereClause := " WHERE " + strings.Join(where, " AND ")
 
-	r.db.QueryRow(baseCount+whereClause, args...).Scan(&total)
+	if err := r.db.QueryRow(baseCount+whereClause, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count documents: %w", err)
+	}
 
 	listQ := baseList + whereClause + " ORDER BY created_at DESC"
 	listQ += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)

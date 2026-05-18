@@ -51,7 +51,7 @@ func (c *Config) Validate() error {
 	if c.DBHost == "" || c.DBUser == "" || c.DBName == "" {
 		return fmt.Errorf("database configuration is incomplete")
 	}
-	if c.JWTSecret == "" || c.JWTSecret == "change_me_in_production" {
+	if c.JWTSecret == "" || (c.Environment == "production" && (c.JWTSecret == "change_me_in_production" || c.JWTSecret == "nexus_hrm_jwt_super_secret_key_change_in_production")) {
 		return fmt.Errorf("JWT_SECRET must be set in production")
 	}
 	return nil

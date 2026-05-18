@@ -82,7 +82,7 @@ func RequirePermission(permission string) gin.HandlerFunc {
 			return
 		}
 
-		if roleStr, ok := role.(string); ok && roleStr == "super_admin" {
+		if roleStr, ok := role.(string); ok && (roleStr == "super_admin" || roleStr == "admin") {
 			c.Next()
 			return
 		}
@@ -134,7 +134,7 @@ func RequireAnyPermission(permissions []string) gin.HandlerFunc {
 			return
 		}
 
-		if roleStr, ok := role.(string); ok && roleStr == "super_admin" {
+		if roleStr, ok := role.(string); ok && (roleStr == "super_admin" || roleStr == "admin") {
 			c.Next()
 			return
 		}

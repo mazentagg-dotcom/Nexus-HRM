@@ -33,7 +33,7 @@ services:
       DB_PASSWORD: nexus_secret_2024
       DB_NAME: nexus_hrm
       DB_SSL_MODE: disable
-      JWT_SECRET: nexus_hrm_jwt_super_secret_key_change_in_production
+      JWT_SECRET: nhrm_prod_jwt_key_2024_secure_random_string_x9k2
       JWT_EXPIRY_HOURS: "24"
     depends_on:
       db:

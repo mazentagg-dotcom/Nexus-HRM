@@ -61,6 +61,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const hasPermission = useCallback((perm) => {
+    if (roles.includes('super_admin') || roles.includes('admin')) return true
     if (!permissions.length) return false
     if (permissions.includes(perm)) return true
     const parts = perm.split('.')
@@ -71,7 +72,7 @@ export function AuthProvider({ children }) {
     }
     if (permissions.includes('admin') || permissions.includes('*')) return true
     return false
-  }, [permissions])
+  }, [permissions, roles])
 
   const hasAnyPermission = useCallback((perms) => {
     return perms.some(p => hasPermission(p))
@@ -81,7 +82,7 @@ export function AuthProvider({ children }) {
     return roles.includes(role)
   }, [roles])
 
-  const isAdmin = hasRole('super_admin')
+  const isAdmin = hasRole('super_admin') || hasRole('admin')
 
   return (
     <AuthContext.Provider value={{
