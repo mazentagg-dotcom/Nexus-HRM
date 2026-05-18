@@ -4,12 +4,11 @@ export const NAV_ITEMS = [
   { path: '/employees', label: 'Employees', icon: 'Users', permission: 'hr.view' },
   { path: '/attendance', label: 'Attendance', icon: 'Activity', permission: 'hr.view' },
   { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff', permission: 'hr.view' },
-  { path: '/payroll', label: 'Payroll', icon: 'DollarSign', permission: 'hr.view' },
+  { path: '/payslip', label: 'Payslip', icon: 'DollarSign', permission: 'hr.view' },
+  { path: '/payroll', label: 'Payroll', icon: 'Wallet', permission: 'hr.view' },
+  { path: '/requests', label: 'Requests', icon: 'ClipboardList', permission: 'hr.view' },
+  { path: '/upload', label: 'Upload Data', icon: 'Upload', permission: 'hr.view' },
   { path: '/documents', label: 'Documents', icon: 'Folder', permission: 'hr.view' },
-  { path: '/onboarding', label: 'Onboarding', icon: 'ClipboardCheck', permission: 'hr.view' },
-  { path: '/performance', label: 'Performance', icon: 'Target', permission: 'hr.view' },
-  { path: '/org-chart', label: 'Org Chart', icon: 'Network', permission: 'hr.view' },
-  { path: '/self-service', label: 'Self-Service', icon: 'UserCheck', permission: null },
   { path: '/settings', label: 'Settings', icon: 'Settings', permission: 'settings.view' },
 ]
 

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -106,7 +105,6 @@ func (h *HRHandler) GetEmployees(c *gin.Context) {
 
 	employees, total, err := h.service.GetEmployees(search, department, status, p.Page, p.PageSize)
 	if err != nil {
-		log.Printf("GetEmployees error: %v", err)
 		utils.InternalError(c, "Failed to load employees")
 		return
 	}

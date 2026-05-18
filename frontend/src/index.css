@@ -47,15 +47,15 @@ body {
 
 @layer components {
   .card-base {
-    @apply bg-white rounded-xl border border-gray-100 shadow-card transition-all duration-200;
+    @apply bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-card transition-all duration-200;
   }
 
   .card-base:hover {
-    @apply shadow-card-hover border-gray-200;
+    @apply shadow-card-hover border-gray-200 dark:border-gray-600;
   }
 
   .input-base {
-    @apply w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20;
+    @apply w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20;
   }
 
   .sidebar-link {
@@ -69,6 +69,24 @@ body {
   .bg-sidebar {
     background-color: #0f172a;
   }
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #111827;
+}
+
+.dark ::selection {
+  background-color: #4338ca;
+  color: #e0e7ff;
+}
+
+.dark input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1px #374151, 0 0 0 3px rgba(79, 70, 229, 0.15);
+  -webkit-text-fill-color: #f3f4f6;
 }
 
 ::selection {

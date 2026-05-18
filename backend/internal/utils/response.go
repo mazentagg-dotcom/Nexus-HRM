@@ -2,6 +2,7 @@ package utils
 
 import (
 	"net/http"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,6 +56,9 @@ func Error(c *gin.Context, statusCode int, errType string, message string) {
 }
 
 func Paginated(c *gin.Context, data interface{}, total int64, pagination Pagination) {
+	if data == nil || (reflect.ValueOf(data).Kind() == reflect.Slice && reflect.ValueOf(data).IsNil()) {
+		data = []interface{}{}
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{

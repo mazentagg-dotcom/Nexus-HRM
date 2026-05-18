@@ -6,6 +6,7 @@ import AnimatedTable from '../components/AnimatedTable'
 import Badge from '../components/Badge'
 import Button from '../components/Button'
 import { getHRDashboard, getLeaveRequests } from '../api/hr'
+import { useI18n } from '../i18n'
 import {
   Users, UserCheck, Building2, CalendarOff, DollarSign, Activity,
   ChevronRight, UserPlus, Calendar, Clock, DollarSign as DollarIcon, ClipboardCheck,
@@ -22,8 +23,8 @@ const leaveTypeColors = { annual: 'blue', sick: 'emerald', personal: 'purple', u
 
 function SkeletonCard({ className = '' }) {
   return (
-    <div className={`rounded-xl border border-gray-100 bg-white p-5 ${className}`}>
-      <div className="animate-pulse space-y-3"><div className="h-3 w-20 rounded bg-gray-100" /><div className="h-7 w-28 rounded bg-gray-100" /><div className="h-3 w-16 rounded bg-gray-50" /></div>
+    <div className={`rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 ${className}`}>
+      <div className="animate-pulse space-y-3"><div className="h-3 w-20 rounded bg-gray-100 dark:bg-gray-700" /><div className="h-7 w-28 rounded bg-gray-100 dark:bg-gray-700" /><div className="h-3 w-16 rounded bg-gray-50 dark:bg-gray-700/50" /></div>
     </div>
   )
 }
@@ -37,19 +38,12 @@ const quickActionColors = {
   rose: 'from-rose-500 to-rose-600 shadow-rose-200',
 }
 
-const kpiConfig = [
-  { id: 'total_employees', title: 'Total Employees', icon: 'Users', color: 'indigo' },
-  { id: 'active_employees', title: 'Active Employees', icon: 'UserCheck', color: 'emerald' },
-  { id: 'total_departments', title: 'Departments', icon: 'Building2', color: 'purple' },
-  { id: 'pending_leaves', title: 'Pending Leaves', icon: 'CalendarOff', color: 'amber' },
-  { id: 'monthly_payroll', title: 'Monthly Payroll', icon: 'DollarSign', color: 'sky', prefix: '$' },
-  { id: 'attendance_rate', title: 'Attendance Rate', icon: 'Activity', color: 'rose', suffix: '%' },
-]
-
 export default function Dashboard() {
+  const { t } = useI18n()
   const [loading, setLoading] = useState(true)
   const [apiData, setApiData] = useState(null)
   const [leaves, setLeaves] = useState([])
+  const [thisMonth, setThisMonth] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -65,23 +59,41 @@ export default function Dashboard() {
     return () => clearTimeout(timer)
   }, [])
 
+  const kpiConfig = [
+    { id: 'total_employees', title: t('totalEmployees'), icon: 'Users', color: 'indigo' },
+    { id: 'active_employees', title: t('activeEmployees'), icon: 'UserCheck', color: 'emerald' },
+    { id: 'total_departments', title: t('departments'), icon: 'Building2', color: 'purple' },
+    { id: 'pending_leaves', title: t('pendingLeaves'), icon: 'CalendarOff', color: 'amber' },
+    { id: 'monthly_payroll', title: t('monthlyPayroll'), icon: 'DollarSign', color: 'sky', prefix: '$' },
+    { id: 'attendance_rate', title: t('attendanceRate'), icon: 'Activity', color: 'rose', suffix: '%' },
+  ]
+
+  const filteredLeaves = thisMonth
+    ? leaves.filter(l => {
+        if (!l.created_at) return false
+        const d = new Date(l.created_at)
+        const now = new Date()
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      })
+    : leaves
+
   const quickActions = [
-    { label: 'Add Employee', desc: 'New hire', icon: UserPlus, color: 'indigo', path: '/employees' },
-    { label: 'New Leave', desc: 'Submit request', icon: Calendar, color: 'sky', path: '/leave' },
-    { label: 'Run Payroll', desc: 'Process payroll', icon: DollarIcon, color: 'emerald', path: '/payroll' },
-    { label: 'Attendance', desc: 'View today', icon: Clock, color: 'amber', path: '/attendance' },
-    { label: 'Onboarding', desc: 'New hires', icon: ClipboardCheck, color: 'purple', path: '/onboarding' },
-    { label: 'Self-Service', desc: 'Employee portal', icon: UserCheck, color: 'rose', path: '/self-service' },
+    { label: t('addEmployee'), desc: 'New hire', icon: UserPlus, color: 'indigo', path: '/employees' },
+    { label: t('newLeaveRequest'), desc: 'Submit request', icon: Calendar, color: 'sky', path: '/leave' },
+    { label: t('runPayroll'), desc: 'Process payroll', icon: DollarIcon, color: 'emerald', path: '/payslip' },
+    { label: t('attendance'), desc: 'View today', icon: Clock, color: 'amber', path: '/attendance' },
+    { label: t('onboarding'), desc: 'New hires', icon: ClipboardCheck, color: 'purple', path: '/onboarding' },
+    { label: t('selfService'), desc: 'Employee portal', icon: UserCheck, color: 'rose', path: '/self-service' },
   ]
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={fadeUp} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">Welcome back! Here's an overview of your workforce.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('dashboard')}</h1>
+          <p className="mt-1 text-sm text-gray-500">{t('welcome')}</p>
         </div>
-        <Button size="sm" variant="secondary" icon={Calendar}>This Month</Button>
+        <Button size="sm" variant={thisMonth ? 'primary' : 'secondary'} onClick={() => setThisMonth(p => !p)}>{t('thisMonth')}</Button>
       </motion.div>
 
       {loading ? (
@@ -103,29 +115,29 @@ export default function Dashboard() {
 
       {!loading && (
         <motion.div variants={fadeScale} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+          <div className="lg:col-span-2 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-6 pt-5 pb-3">
-              <h3 className="text-sm font-semibold text-gray-900">Recent Leave Requests</h3>
-              <button onClick={() => navigate('/leave')} className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
-                View all <ChevronRight className="h-3 w-3" />
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('recentLeaveRequests')}</h3>
+              <button onClick={() => navigate('/leave')} className="flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors">
+                {t('viewAll')} <ChevronRight className="h-3 w-3" />
               </button>
             </div>
             <AnimatedTable
               columns={[
-                { key: 'employee_name', label: 'Employee', render: v => <span className="font-medium text-gray-900">{v}</span> },
-                { key: 'leave_type', label: 'Type', render: v => <Badge color={leaveTypeColors[v] || 'gray'}>{v}</Badge> },
+                { key: 'employee_name', label: t('employeeName'), render: v => <span className="font-medium text-gray-900 dark:text-gray-100">{v}</span> },
+                { key: 'leave_type', label: t('type'), render: v => <Badge color={leaveTypeColors[v] || 'gray'}>{v}</Badge> },
                 { key: 'duration_days', label: 'Days', render: v => <span className="font-medium">{v}</span> },
                 { key: 'start_date', label: 'From', render: v => <span className="text-gray-500 text-xs">{v}</span> },
-                { key: 'status', label: 'Status', render: v => <Badge color={leaveStatusColors[v] || 'gray'}>{v}</Badge> },
+                { key: 'status', label: t('status'), render: v => <Badge color={leaveStatusColors[v] || 'gray'}>{v}</Badge> },
               ]}
-              data={leaves}
+              data={filteredLeaves}
               pageSize={5}
             />
           </div>
 
-          <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+          <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
             <div className="px-6 pt-5 pb-3">
-              <h3 className="text-sm font-semibold text-gray-900">Quick Actions</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('quickActions')}</h3>
             </div>
             <div className="px-4 pb-4 grid grid-cols-2 gap-2">
               {quickActions.map((action, i) => {
@@ -145,7 +157,7 @@ export default function Dashboard() {
                       <action.icon className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-900">{action.label}</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{action.label}</p>
                       <p className="text-[10px] text-gray-400 mt-0.5">{action.desc}</p>
                     </div>
                   </motion.button>

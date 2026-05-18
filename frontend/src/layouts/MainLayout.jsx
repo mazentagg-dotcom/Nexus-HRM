@@ -26,7 +26,7 @@ export default function MainLayout() {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
+    <div className="flex h-screen overflow-hidden bg-[#f8fafc] dark:bg-gray-900">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebar}

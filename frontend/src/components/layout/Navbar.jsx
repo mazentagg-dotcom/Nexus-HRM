@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
 import { useStore } from '../../store'
+import { useI18n } from '../../i18n'
 import Dropdown from '../ui/Dropdown'
 import { getNotifications } from '../../api/notifications'
 import {
@@ -25,10 +26,10 @@ const routeLabels = {
   '/attendance': 'Attendance',
   '/leave': 'Leave Requests',
   '/payroll': 'Payroll',
+  '/payslip': 'Payslip',
+  '/requests': 'Requests',
+  '/upload': 'Upload Data',
   '/documents': 'Documents',
-  '/onboarding': 'Onboarding',
-  '/performance': 'Performance',
-  '/org-chart': 'Org Chart',
   '/self-service': 'Self-Service',
   '/employee-dashboard': 'Dashboard',
   '/settings': 'Settings',
@@ -37,7 +38,7 @@ const routeLabels = {
 const quickActions = [
   { label: 'Add Employee', path: '/employees', icon: 'user' },
   { label: 'New Leave', path: '/leave', icon: 'calendar' },
-  { label: 'Run Payroll', path: '/payroll', icon: 'dollar' },
+  { label: 'Payslip', path: '/payslip', icon: 'dollar' },
   { label: 'View Attendance', path: '/attendance', icon: 'activity' },
 ]
 
@@ -64,6 +65,7 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useStore()
+  const { locale, toggleLocale } = useI18n()
   const [notifOpen, setNotifOpen] = useState(false)
   const [navNotifications, setNavNotifications] = useState(defaultNotifications)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -131,25 +133,25 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
   ]
 
   return (
-    <header className="sticky top-0 z-20 flex h-[60px] items-center justify-between border-b border-gray-200/80 bg-white/80 backdrop-blur-xl px-4 lg:px-6">
+    <header className="sticky top-0 z-20 flex h-[60px] items-center justify-between border-b border-gray-200/80 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl px-4 lg:px-6">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuToggle}
-          className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
           <Menu className="h-5 w-5" />
         </button>
 
         <nav className="hidden sm:flex items-center gap-1.5 text-sm">
-          <span className="text-gray-400">Home</span>
-          <svg className="h-3.5 w-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <span className="text-gray-400 dark:text-gray-500">Home</span>
+          <svg className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
           <motion.span
             key={pageTitle}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-semibold text-gray-800"
+            className="font-semibold text-gray-800 dark:text-gray-200"
           >
             {pageTitle}
           </motion.span>
@@ -168,20 +170,20 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             className={`
-              h-9 w-64 rounded-xl border bg-gray-50/80 pl-9 pr-10 text-sm text-gray-900
-              placeholder-gray-400 transition-all duration-200
-              focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20
-              ${searchFocused ? 'border-indigo-300 ring-2 ring-indigo-500/20 bg-white w-80' : 'border-gray-200'}
+              h-9 w-64 rounded-xl border bg-gray-50/80 dark:bg-gray-700/80 dark:text-gray-100 pl-9 pr-10 text-sm text-gray-900
+              placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200
+              focus:border-indigo-300 focus:bg-white dark:focus:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20
+              ${searchFocused ? 'border-indigo-300 ring-2 ring-indigo-500/20 bg-white dark:bg-gray-700 w-80' : 'border-gray-200 dark:border-gray-600'}
             `}
           />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-gray-400 shadow-sm">
+          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 shadow-sm">
             <Command className="h-2.5 w-2.5" />K
           </kbd>
         </form>
 
         <button
           onClick={toggleTheme}
-          className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+          className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200"
           title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
         >
           <AnimatePresence mode="wait">
@@ -195,6 +197,14 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
               </motion.div>
             )}
           </AnimatePresence>
+        </button>
+
+        <button
+          onClick={toggleLocale}
+          className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200"
+          title={locale === 'en' ? 'Switch to French' : 'Passer en anglais'}
+        >
+          <span className="text-xs font-bold tracking-tight">{locale === 'en' ? 'FR' : 'EN'}</span>
         </button>
 
         <div className="relative" ref={quickRef}>
@@ -213,16 +223,16 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 6, scale: 0.96 }}
                 transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-                className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-100 bg-white py-1.5 shadow-xl shadow-gray-900/5 z-50"
+                className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 shadow-xl shadow-gray-900/5 dark:shadow-gray-900/50 z-50"
               >
                 <div className="px-3 py-1.5">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Quick Actions</p>
+                  <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Quick Actions</p>
                 </div>
                 {quickActions.map((action) => (
                   <button
                     key={action.path}
                     onClick={() => { setQuickOpen(false); navigate(action.path) }}
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <Sparkles className="h-4 w-4 text-indigo-500" />
                     {action.label}
@@ -236,7 +246,7 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setNotifOpen(!notifOpen)}
-            className="relative rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="relative rounded-lg p-2 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Bell className="h-[18px] w-[18px]" />
@@ -260,11 +270,11 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
                 transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-                className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-gray-100 bg-white shadow-xl shadow-gray-900/5 z-50 overflow-hidden"
+                className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl shadow-gray-900/5 dark:shadow-gray-900/50 z-50 overflow-hidden"
               >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-900">Notifications</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notifications</span>
                     {unreadCount > 0 && (
                       <span className="flex h-5 items-center rounded-full bg-indigo-100 px-1.5 text-[10px] font-bold text-indigo-700">
                         {unreadCount} new
@@ -281,17 +291,17 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
                       transition={{ delay: i * 0.03 }}
                       className={`
                         flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors duration-100
-                        hover:bg-gray-50 ${n.unread ? 'bg-indigo-50/40' : ''}
-                        ${i < navNotifications.length - 1 ? 'border-b border-gray-50' : ''}
+                        hover:bg-gray-50 dark:hover:bg-gray-700 ${n.unread ? 'bg-indigo-50/40 dark:bg-indigo-500/10' : ''}
+                        ${i < navNotifications.length - 1 ? 'border-b border-gray-50 dark:border-gray-700' : ''}
                       `}
                       onClick={() => { setNotifOpen(false); if (n.link) navigate(n.link) }}
                     >
                       <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${n.unread ? 'bg-indigo-500' : 'bg-transparent'}`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm leading-snug ${n.unread ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
+                        <p className={`text-sm leading-snug ${n.unread ? 'font-medium text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'}`}>
                           {n.title}
                         </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">{n.time}</p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{n.time}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -301,16 +311,16 @@ export default function Navbar({ onMenuToggle, sidebarCollapsed }) {
           </AnimatePresence>
         </div>
 
-        <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block" />
+        <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 
         <Dropdown
           trigger={
-            <button className="flex items-center gap-2.5 rounded-xl p-1 pr-2 transition-all duration-200 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 group">
+            <button className="flex items-center gap-2.5 rounded-xl p-1 pr-2 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 group">
               <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-[12px] font-bold text-white shadow-sm ring-2 ring-indigo-100 transition-all duration-200 group-hover:ring-indigo-200 group-hover:shadow-md">
                 {userInitial}
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-[13px] font-medium text-gray-700 leading-tight">{displayName}</p>
+                <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 leading-tight">{displayName}</p>
                 <p className="text-[11px] text-gray-400 leading-tight mt-0.5">Admin</p>
               </div>
               <svg className="hidden md:block h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

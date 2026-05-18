@@ -11,10 +11,10 @@ const Employees = lazy(() => import('../pages/employees/Employees'))
 const Attendance = lazy(() => import('../pages/attendance/Attendance'))
 const LeaveRequests = lazy(() => import('../pages/leave/LeaveRequests'))
 const Payroll = lazy(() => import('../pages/payroll/Payroll'))
+const Payslip = lazy(() => import('../pages/payslip/Payslip'))
+const Requests = lazy(() => import('../pages/requests/Requests'))
+const UploadData = lazy(() => import('../pages/upload/UploadData'))
 const Documents = lazy(() => import('../pages/documents/Documents'))
-const Onboarding = lazy(() => import('../pages/onboarding/Onboarding'))
-const Performance = lazy(() => import('../pages/performance/Performance'))
-const OrgChart = lazy(() => import('../pages/org-chart/OrgChart'))
 const SelfService = lazy(() => import('../pages/self-service/SelfService'))
 const EmployeeDashboard = lazy(() => import('../pages/employee-dashboard/EmployeeDashboard'))
 const Settings = lazy(() => import('../pages/settings/Settings'))
@@ -32,10 +32,8 @@ function SuspensePage({ children }) {
 
 function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth()
-
   if (loading) return <LoadingScreen />
   if (!isAuthenticated) return <Navigate to="/login" replace />
-
   return <Outlet />
 }
 
@@ -62,10 +60,10 @@ const router = createBrowserRouter([
           { path: 'attendance', element: <SuspensePage><Attendance /></SuspensePage> },
           { path: 'leave', element: <SuspensePage><LeaveRequests /></SuspensePage> },
           { path: 'payroll', element: <SuspensePage><Payroll /></SuspensePage> },
+          { path: 'payslip', element: <SuspensePage><Payslip /></SuspensePage> },
+          { path: 'requests', element: <SuspensePage><Requests /></SuspensePage> },
+          { path: 'upload', element: <SuspensePage><UploadData /></SuspensePage> },
           { path: 'documents', element: <SuspensePage><Documents /></SuspensePage> },
-          { path: 'onboarding', element: <SuspensePage><Onboarding /></SuspensePage> },
-          { path: 'performance', element: <SuspensePage><Performance /></SuspensePage> },
-          { path: 'org-chart', element: <SuspensePage><OrgChart /></SuspensePage> },
           { path: 'self-service', element: <SuspensePage><SelfService /></SuspensePage> },
           { path: 'employee-dashboard', element: <SuspensePage><EmployeeDashboard /></SuspensePage> },
           { path: 'settings', element: <SuspensePage><Settings /></SuspensePage> },

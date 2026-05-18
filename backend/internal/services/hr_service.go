@@ -486,9 +486,9 @@ func timeNow() time.Time {
 }
 
 func (s *HRService) GetLeaveBalance(employeeID string) ([]map[string]interface{}, error) {
-	leaves, _, err := s.leaveRepo.FindAll(employeeID, "", "", 1, 1000)
-	if err != nil {
-		return nil, err
+	leaves, _, dbErr := s.leaveRepo.FindAll(employeeID, "", "", 1, 1000)
+	if dbErr != nil {
+		return nil, dbErr
 	}
 
 	type balance struct {
@@ -511,16 +511,20 @@ func (s *HRService) GetLeaveBalance(employeeID string) ([]map[string]interface{}
 	types := []string{"annual", "sick", "personal", "unpaid"}
 	labels := map[string]string{"annual": "Annual Leave", "sick": "Sick Leave", "personal": "Personal Leave", "unpaid": "Unpaid Leave"}
 	for _, t := range types {
-		b := balances[t]
-		remaining := b.Total - b.Used
+		var total, used float64
+		if b, ok := balances[t]; ok && b != nil {
+			total = b.Total
+			used = b.Used
+		}
+		remaining := total - used
 		if remaining < 0 {
 			remaining = 0
 		}
 		result = append(result, map[string]interface{}{
 			"type":      t,
 			"label":     labels[t],
-			"total":     b.Total,
-			"used":      b.Used,
+			"total":     total,
+			"used":      used,
 			"remaining": remaining,
 		})
 	}
