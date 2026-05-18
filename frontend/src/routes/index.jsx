@@ -57,6 +57,7 @@ const router = createBrowserRouter([
         element: <MainLayout />,
         children: [
           { index: true, element: <SuspensePage><Dashboard /></SuspensePage> },
+          { path: 'dashboard', element: <Navigate to="/" replace /> },
           { path: 'employees', element: <SuspensePage><Employees /></SuspensePage> },
           { path: 'attendance', element: <SuspensePage><Attendance /></SuspensePage> },
           { path: 'leave', element: <SuspensePage><LeaveRequests /></SuspensePage> },
