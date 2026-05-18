@@ -10,7 +10,6 @@ const Dashboard = lazy(() => import('../pages/Dashboard'))
 const Employees = lazy(() => import('../pages/employees/Employees'))
 const Attendance = lazy(() => import('../pages/attendance/Attendance'))
 const LeaveRequests = lazy(() => import('../pages/leave/LeaveRequests'))
-const Payroll = lazy(() => import('../pages/payroll/Payroll'))
 const Payslip = lazy(() => import('../pages/payslip/Payslip'))
 const Requests = lazy(() => import('../pages/requests/Requests'))
 const UploadData = lazy(() => import('../pages/upload/UploadData'))
@@ -62,7 +61,6 @@ const router = createBrowserRouter([
           { path: 'employees', element: <SuspensePage><Employees /></SuspensePage> },
           { path: 'attendance', element: <SuspensePage><Attendance /></SuspensePage> },
           { path: 'leave', element: <SuspensePage><LeaveRequests /></SuspensePage> },
-          { path: 'payroll', element: <SuspensePage><Payroll /></SuspensePage> },
           { path: 'payslip', element: <SuspensePage><Payslip /></SuspensePage> },
           { path: 'requests', element: <SuspensePage><Requests /></SuspensePage> },
           { path: 'upload', element: <SuspensePage><UploadData /></SuspensePage> },

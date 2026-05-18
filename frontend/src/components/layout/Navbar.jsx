@@ -25,7 +25,6 @@ const routeLabels = {
   '/employees': 'Employees',
   '/attendance': 'Attendance',
   '/leave': 'Leave Requests',
-  '/payroll': 'Payroll',
   '/payslip': 'Payslip',
   '/requests': 'Requests',
   '/upload': 'Upload Data',

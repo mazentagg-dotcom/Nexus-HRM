@@ -5,7 +5,6 @@ export const NAV_ITEMS = [
   { path: '/attendance', label: 'Attendance', icon: 'Activity', permission: 'hr.view' },
   { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff', permission: 'hr.view' },
   { path: '/payslip', label: 'Payslip', icon: 'DollarSign', permission: 'hr.view' },
-  { path: '/payroll', label: 'Payroll', icon: 'Wallet', permission: 'hr.view' },
   { path: '/requests', label: 'Requests', icon: 'ClipboardList', permission: 'hr.view' },
   { path: '/upload', label: 'Upload Data', icon: 'Upload', permission: 'hr.view' },
   { path: '/documents', label: 'Documents', icon: 'Folder', permission: 'hr.view' },
