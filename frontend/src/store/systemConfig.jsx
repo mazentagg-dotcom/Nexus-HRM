@@ -102,18 +102,21 @@ export function SystemConfigProvider({ children }) {
 
   useEffect(() => { loadConfig() }, [loadConfig])
 
-  const saveConfig = useCallback(async (section, data) => {
+  const updateConfig = useCallback((data) => {
+    setConfig(prev => ({ ...prev, ...data }))
+  }, [])
+
+  const saveConfig = useCallback(async (data) => {
     setSaving(true)
     try {
-      const merged = { ...config, ...data }
-      await api.put('/hr/system-config', merged)
-      setConfig(merged)
+      await api.put('/hr/system-config', data)
+      setConfig(prev => ({ ...prev, ...data }))
     } catch (e) {
       console.error('Failed to save config:', e)
       throw e
     }
     setSaving(false)
-  }, [config])
+  }, [])
 
   const saveBranch = useCallback(async (data) => {
     try {
@@ -161,7 +164,7 @@ export function SystemConfigProvider({ children }) {
   return (
     <SystemConfigContext.Provider value={{
       config, branches, loading, saving,
-      saveConfig, saveBranch, editBranch, removeBranch,
+      saveConfig, updateConfig, saveBranch, editBranch, removeBranch,
       activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts, loadConfig,
     }}>
       {children}

@@ -146,36 +146,34 @@ function BranchesTab() {
 }
 
 function AttendancePolicyTab() {
-  const { config, saveConfig } = useSystemConfig()
+  const { config, saveConfig, updateConfig } = useSystemConfig()
   const { showToast } = useToast()
   const p = config
 
-  const save = async () => { try { await saveConfig(null, config); showToast('Attendance policy saved', 'success') } catch { showToast('Failed to save', 'error') } }
-
-  const upd = (data) => { Object.assign(config, data) }
+  const save = async () => { try { await saveConfig(config); showToast('Attendance policy saved', 'success') } catch { showToast('Failed to save', 'error') } }
 
   return (
     <div className="space-y-4">
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Basic Settings</h3>
-        <Row label="Working Hours Per Day"><NumInput value={p.workingHoursPerDay} onChange={v => upd({ workingHoursPerDay: v })} suffix="hours" /></Row>
-        <Row label="Working Days Per Month" helper="Used for salary fraction calculations"><NumInput value={p.workingDaysPerMonth} onChange={v => upd({ workingDaysPerMonth: v })} suffix="days" /></Row>
-        <Row label="Grace Period" helper="Minutes after start time before marked late"><NumInput value={p.gracePeriodMinutes} onChange={v => upd({ gracePeriodMinutes: v })} suffix="min" /></Row>
+        <Row label="Working Hours Per Day"><NumInput value={p.working_hours_per_day} onChange={v => updateConfig({ working_hours_per_day: v })} suffix="hours" /></Row>
+        <Row label="Working Days Per Month" helper="Used for salary fraction calculations"><NumInput value={p.working_days_per_month} onChange={v => updateConfig({ working_days_per_month: v })} suffix="days" /></Row>
+        <Row label="Grace Period" helper="Minutes after start time before marked late"><NumInput value={p.grace_period_minutes} onChange={v => updateConfig({ grace_period_minutes: v })} suffix="min" /></Row>
         <Row label="Standard Start Time">
-          <input type="time" value={p.standardStartTime} onChange={e => upd({ standardStartTime: e.target.value })}
+          <input type="time" value={p.standard_start_time} onChange={e => updateConfig({ standard_start_time: e.target.value })}
             className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
         </Row>
         <Row label="Standard End Time">
-          <input type="time" value={p.standardEndTime} onChange={e => upd({ standardEndTime: e.target.value })}
+          <input type="time" value={p.standard_end_time} onChange={e => updateConfig({ standard_end_time: e.target.value })}
             className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
         </Row>
         <Row label="Weekend Days">
           <div className="flex gap-1">
             {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
               <button key={d} onClick={() => {
-                const days = p.weekendDays.includes(d) ? p.weekendDays.filter(x => x !== d) : [...p.weekendDays, d]
-                upd({ weekendDays: days })
-              }} className={`px-2 py-1 text-xs rounded-lg border transition-colors ${p.weekendDays.includes(d) ? 'bg-indigo-100 dark:bg-indigo-500/20 border-indigo-300 dark:border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400'}`}>{d.slice(0, 3)}</button>
+                const days = p.weekend_days.includes(d) ? p.weekend_days.filter(x => x !== d) : [...p.weekend_days, d]
+                updateConfig({ weekend_days: days })
+              }} className={`px-2 py-1 text-xs rounded-lg border transition-colors ${p.weekend_days.includes(d) ? 'bg-indigo-100 dark:bg-indigo-500/20 border-indigo-300 dark:border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400'}`}>{d.slice(0, 3)}</button>
             ))}
           </div>
         </Row>
@@ -185,10 +183,10 @@ function AttendancePolicyTab() {
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Absence Deduction</h3>
         <Row label="Absence Mode">
-          <Sel value={p.absence_mode} onChange={v => upd({ absence_mode: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'progressive', label: 'Progressive' }]} />
+          <Sel value={p.absence_mode} onChange={v => updateConfig({ absence_mode: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'progressive', label: 'Progressive' }]} />
         </Row>
         {p.absence_mode === 'fixed' ? (
-          <Row label="Fixed Absence Amount" helper="Deducted per absence day"><NumInput value={p.fixed_absence_amount} onChange={v => upd({ fixed_absence_amount: v })} suffix="per day" /></Row>
+          <Row label="Fixed Absence Amount" helper="Deducted per absence day"><NumInput value={p.fixed_absence_amount} onChange={v => updateConfig({ fixed_absence_amount: v })} suffix="per day" /></Row>
         ) : (
           <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Progressive amounts per day:</p>
@@ -197,7 +195,7 @@ function AttendancePolicyTab() {
                 <div key={i} className="flex items-center gap-1">
                   <span className="text-xs text-gray-400 w-6">D{i + 1}</span>
                   <input type="number" value={amt} onChange={e => {
-                    const arr = [...p.progressive_absence_amounts]; arr[i] = Number(e.target.value); upd({ progressive_absence_amounts: arr })
+                    const arr = [...p.progressive_absence_amounts]; arr[i] = Number(e.target.value); updateConfig({ progressive_absence_amounts: arr })
                   }} className="w-20 text-right text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 </div>
               ))}
@@ -211,20 +209,20 @@ function AttendancePolicyTab() {
       <div className="card-base p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Late Deduction</h3>
-          <Toggle checked={p.enable_late_deduction} onChange={v => upd({ enable_late_deduction: v })} />
+          <Toggle checked={p.enable_late_deduction} onChange={v => updateConfig({ enable_late_deduction: v })} />
         </div>
         {p.enable_late_deduction && (
           <>
-            <Row label="Late Threshold" helper="Hours after which deduction applies"><NumInput value={p.late_threshold_hours} onChange={v => upd({ late_threshold_hours: v })} suffix="hours" /></Row>
+            <Row label="Late Threshold" helper="Hours after which deduction applies"><NumInput value={p.late_threshold_hours} onChange={v => updateConfig({ late_threshold_hours: v })} suffix="hours" /></Row>
             <Row label="Deduction Type">
-              <Sel value={p.late_deduction_type} onChange={v => upd({ late_deduction_type: v })} options={[{ value: 'fraction', label: 'Salary Fraction' }, { value: 'fixed', label: 'Fixed Amount' }]} />
+              <Sel value={p.late_deduction_type} onChange={v => updateConfig({ late_deduction_type: v })} options={[{ value: 'fraction', label: 'Salary Fraction' }, { value: 'fixed', label: 'Fixed Amount' }]} />
             </Row>
             {p.late_deduction_type === 'fraction' ? (
               <Row label="Salary Fraction">
-                <Sel value={p.late_deduction_fraction} onChange={v => upd({ late_deduction_fraction: v })} options={[{ value: 'quarter', label: 'Quarter Day' }, { value: 'half', label: 'Half Day' }, { value: 'full', label: 'Full Day' }]} />
+                <Sel value={p.late_deduction_fraction} onChange={v => updateConfig({ late_deduction_fraction: v })} options={[{ value: 'quarter', label: 'Quarter Day' }, { value: 'half', label: 'Half Day' }, { value: 'full', label: 'Full Day' }]} />
               </Row>
             ) : (
-              <Row label="Fixed Late Amount"><NumInput value={p.late_fixed_amount} onChange={v => upd({ late_fixed_amount: v })} suffix="per occurrence" /></Row>
+              <Row label="Fixed Late Amount"><NumInput value={p.late_fixed_amount} onChange={v => updateConfig({ late_fixed_amount: v })} suffix="per occurrence" /></Row>
             )}
           </>
         )}
@@ -235,32 +233,31 @@ function AttendancePolicyTab() {
 }
 
 function PayrollRulesTab() {
-  const { config, saveConfig } = useSystemConfig()
+  const { config, saveConfig, updateConfig } = useSystemConfig()
   const { showToast } = useToast()
   const r = config
 
-  const save = async () => { try { await saveConfig(null, config); showToast('Payroll rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
-  const upd = (data) => { Object.assign(config, data) }
+  const save = async () => { try { await saveConfig(config); showToast('Payroll rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
 
   return (
     <div className="space-y-4">
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payroll Schedule</h3>
         <Row label="Payroll Frequency">
-          <Sel value={r.payroll_frequency} onChange={v => upd({ payroll_frequency: v })} options={[{ value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' }]} />
+          <Sel value={r.payroll_frequency} onChange={v => updateConfig({ payroll_frequency: v })} options={[{ value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' }]} />
         </Row>
-        <Row label="Default Payroll Day"><NumInput value={r.default_payroll_day} onChange={v => upd({ default_payroll_day: v })} suffix={`of month`} /></Row>
-        <Row label="Working Days Per Month" helper="Used for daily salary calculation: Daily = Basic / Working Days"><NumInput value={r.working_days_per_month} onChange={v => upd({ working_days_per_month: v })} suffix="days" /></Row>
+        <Row label="Default Payroll Day"><NumInput value={r.default_payroll_day} onChange={v => updateConfig({ default_payroll_day: v })} suffix={`of month`} /></Row>
+        <Row label="Working Days Per Month" helper="Used for daily salary calculation: Daily = Basic / Working Days"><NumInput value={r.working_days_per_month} onChange={v => updateConfig({ working_days_per_month: v })} suffix="days" /></Row>
       </div>
 
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payroll Options</h3>
-        <Row label="Auto-Generate Payslip"><Toggle checked={r.auto_generate_payslip} onChange={v => upd({ auto_generate_payslip: v })} /></Row>
-        <Row label="Allow Negative Salary"><Toggle checked={r.allow_negative_salary} onChange={v => upd({ allow_negative_salary: v })} /></Row>
-        <Row label="Overtime Enabled"><Toggle checked={r.overtime_enabled} onChange={v => upd({ overtime_enabled: v })} /></Row>
+        <Row label="Auto-Generate Payslip"><Toggle checked={r.auto_generate_payslip} onChange={v => updateConfig({ auto_generate_payslip: v })} /></Row>
+        <Row label="Allow Negative Salary"><Toggle checked={r.allow_negative_salary} onChange={v => updateConfig({ allow_negative_salary: v })} /></Row>
+        <Row label="Overtime Enabled"><Toggle checked={r.overtime_enabled} onChange={v => updateConfig({ overtime_enabled: v })} /></Row>
         {r.overtime_enabled && (
           <Row label="Overtime Rate Multiplier" helper="Overtime Pay = Hours x (Daily Salary / Hours Per Day) x Rate">
-            <NumInput value={r.overtime_rate_multiplier} onChange={v => upd({ overtime_rate_multiplier: v })} suffix="x" min={0.1} />
+            <NumInput value={r.overtime_rate_multiplier} onChange={v => updateConfig({ overtime_rate_multiplier: v })} suffix="x" min={0.1} />
           </Row>
         )}
         <SaveBar onSave={save} />
@@ -270,12 +267,11 @@ function PayrollRulesTab() {
 }
 
 function CompanyDeductionsTab() {
-  const { config, saveConfig, activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts } = useSystemConfig()
+  const { config, saveConfig, updateConfig, activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts } = useSystemConfig()
   const { showToast } = useToast()
   const d = config
 
-  const save = async () => { try { await saveConfig(null, config); showToast('Company deductions saved', 'success'); refreshEmployeeCounts() } catch { showToast('Failed to save', 'error') } }
-  const upd = (data) => { Object.assign(config, data) }
+  const save = async () => { try { await saveConfig(config); showToast('Company deductions saved', 'success'); refreshEmployeeCounts() } catch { showToast('Failed to save', 'error') } }
 
   const taxPerEmp = calcTaxPerEmployee(config, activeEmployeeCount)
   const insPerEmp = calcInsurancePerEmployee(config, activeEmployeeCount)
@@ -293,10 +289,10 @@ function CompanyDeductionsTab() {
 
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Company-Level Settings</h3>
-        <Row label="Annual Tax Bulk Amount"><NumInput value={d.annual_tax_bulk_amount} onChange={v => upd({ annual_tax_bulk_amount: v })} /></Row>
-        <Row label="Annual Company Insurance Bulk Amount"><NumInput value={d.annual_insurance_bulk_amount} onChange={v => upd({ annual_insurance_bulk_amount: v })} /></Row>
+        <Row label="Annual Tax Bulk Amount"><NumInput value={d.annual_tax_bulk_amount} onChange={v => updateConfig({ annual_tax_bulk_amount: v })} /></Row>
+        <Row label="Annual Company Insurance Bulk Amount"><NumInput value={d.annual_insurance_bulk_amount} onChange={v => updateConfig({ annual_insurance_bulk_amount: v })} /></Row>
         <Row label="Payroll Frequency">
-          <Sel value={d.payroll_frequency} onChange={v => upd({ payroll_frequency: v })} options={[{ value: 'monthly', label: 'Monthly (/12)' }, { value: 'weekly', label: 'Weekly (/52)' }]} />
+          <Sel value={d.payroll_frequency} onChange={v => updateConfig({ payroll_frequency: v })} options={[{ value: 'monthly', label: 'Monthly (/12)' }, { value: 'weekly', label: 'Weekly (/52)' }]} />
         </Row>
       </div>
 
@@ -349,33 +345,32 @@ function CompanyDeductionsTab() {
 }
 
 function MedicalInsuranceTab() {
-  const { config, saveConfig } = useSystemConfig()
+  const { config, saveConfig, updateConfig } = useSystemConfig()
   const { showToast } = useToast()
   const r = config
 
-  const save = async () => { try { await saveConfig(null, config); showToast('Medical insurance rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
-  const upd = (data) => { Object.assign(config, data) }
+  const save = async () => { try { await saveConfig(config); showToast('Medical insurance rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
 
   return (
     <div className="space-y-4">
       <div className="card-base p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Medical Insurance</h3>
-          <Toggle checked={r.medical_insurance_enabled} onChange={v => upd({ medical_insurance_enabled: v })} />
+          <Toggle checked={r.medical_insurance_enabled} onChange={v => updateConfig({ medical_insurance_enabled: v })} />
         </div>
         {!r.medical_insurance_enabled && <p className="text-xs text-gray-400">Medical insurance deduction is disabled.</p>}
         {r.medical_insurance_enabled && (
           <>
             <Row label="Deduction Type">
-              <Sel value={r.medical_deduction_type} onChange={v => upd({ medical_deduction_type: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'percentage', label: 'Percentage of Base Salary' }]} />
+              <Sel value={r.medical_deduction_type} onChange={v => updateConfig({ medical_deduction_type: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'percentage', label: 'Percentage of Base Salary' }]} />
             </Row>
             {r.medical_deduction_type === 'fixed' ? (
-              <Row label="Fixed Monthly Amount"><NumInput value={r.medical_fixed_monthly_amount} onChange={v => upd({ medical_fixed_monthly_amount: v })} /></Row>
+              <Row label="Fixed Monthly Amount"><NumInput value={r.medical_fixed_monthly_amount} onChange={v => updateConfig({ medical_fixed_monthly_amount: v })} /></Row>
             ) : (
-              <Row label="Percentage Rate"><NumInput value={r.medical_percentage_rate} onChange={v => upd({ medical_percentage_rate: v })} suffix="%" /></Row>
+              <Row label="Percentage Rate"><NumInput value={r.medical_percentage_rate} onChange={v => updateConfig({ medical_percentage_rate: v })} suffix="%" /></Row>
             )}
             <Row label="Apply To">
-              <Sel value={r.medical_apply_to} onChange={v => upd({ medical_apply_to: v })} options={[{ value: 'enabled_only', label: 'Employees with medical insurance enabled' }, { value: 'all_active', label: 'All active employees' }]} />
+              <Sel value={r.medical_apply_to} onChange={v => updateConfig({ medical_apply_to: v })} options={[{ value: 'enabled_only', label: 'Employees with medical insurance enabled' }, { value: 'all_active', label: 'All active employees' }]} />
             </Row>
             <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
               <p className="text-xs text-indigo-700 dark:text-indigo-300">
@@ -394,28 +389,27 @@ function MedicalInsuranceTab() {
 }
 
 function LoansTab() {
-  const { config, saveConfig } = useSystemConfig()
+  const { config, saveConfig, updateConfig } = useSystemConfig()
   const { showToast } = useToast()
   const r = config
 
-  const save = async () => { try { await saveConfig(null, config); showToast('Loan rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
-  const upd = (data) => { Object.assign(config, data) }
+  const save = async () => { try { await saveConfig(config); showToast('Loan rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
 
   return (
     <div className="space-y-4">
       <div className="card-base p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Loan Deduction</h3>
-          <Toggle checked={r.loan_enabled} onChange={v => upd({ loan_enabled: v })} />
+          <Toggle checked={r.loan_enabled} onChange={v => updateConfig({ loan_enabled: v })} />
         </div>
         {!r.loan_enabled && <p className="text-xs text-gray-400">Loan deduction is disabled.</p>}
         {r.loan_enabled && (
           <>
             <Row label="Default Deduction Behavior">
-              <Sel value={r.loan_default_behavior} onChange={v => upd({ loan_default_behavior: v })} options={[{ value: 'fixed_installment', label: 'Fixed Monthly Installment' }, { value: 'remaining_divided', label: 'Remaining Balance / Remaining Months' }]} />
+              <Sel value={r.loan_default_behavior} onChange={v => updateConfig({ loan_default_behavior: v })} options={[{ value: 'fixed_installment', label: 'Fixed Monthly Installment' }, { value: 'remaining_divided', label: 'Remaining Balance / Remaining Months' }]} />
             </Row>
             <Row label="Auto-Deduct from Payroll" helper="Automatically deduct loan installments when processing payroll">
-              <Toggle checked={r.loan_auto_deduct} onChange={v => upd({ loan_auto_deduct: v })} />
+              <Toggle checked={r.loan_auto_deduct} onChange={v => updateConfig({ loan_auto_deduct: v })} />
             </Row>
             <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
               <p className="text-xs text-indigo-700 dark:text-indigo-300">
