@@ -1,66 +1,68 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import Tabs from '../../components/ui/Tabs'
 import Button from '../../components/Button'
 import { useToast } from '../../components/feedback/Toast'
-import { useSystemConfig, calcTaxPerEmployee, calcInsurancePerEmployee } from '../../store/systemConfig'
-import { useI18n } from '../../i18n'
+import { useSystemConfig } from '../../store/systemConfig'
 import { useAuth } from '../../hooks/useAuth'
+import { container, fadeUp, Toggle, NumInput, Sel, Row, SaveBar, TextInput, SectionCard, InfoBox, fmt } from './ConfigComponents'
+import AttendanceConfiguration from './AttendanceConfiguration'
 import {
-  GitBranch, Clock, DollarSign, Building2, Heart, Banknote, Shield, Lock,
-  Plus, Trash2, Edit3, Check, X, Info, Calculator, Save,
+  GitBranch, Clock, DollarSign, Building2, Heart, Banknote, Shield, Globe, Briefcase,
+  Plus, Trash2, Edit3, Check, X, Info, Calculator, Save, Users, Settings,
 } from 'lucide-react'
 
-const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
-const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
+const SECTIONS = [
+  { id: 'profile', label: 'Company Profile', icon: Briefcase },
+  { id: 'branches', label: 'Branches', icon: GitBranch },
+  { id: 'attendance', label: 'Attendance', icon: Clock },
+  { id: 'payroll', label: 'Payroll Rules', icon: DollarSign },
+  { id: 'company', label: 'Company Deductions', icon: Calculator },
+  { id: 'medical', label: 'Medical Insurance', icon: Heart },
+  { id: 'loans', label: 'Loans', icon: Banknote },
+  { id: 'permissions', label: 'Permissions', icon: Shield },
+  { id: 'language', label: 'Language', icon: Globe },
+]
 
-const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function CompanyProfileSection() {
+  const { showToast } = useToast()
+  const [profile, setProfile] = useState({
+    company_name: 'Nexus HRM Demo Corp',
+    industry: 'Technology',
+    company_size: '50-200',
+    country: 'Egypt',
+    currency: 'EGP',
+    tax_registration: 'TAX-12345-6789',
+    contact_email: 'info@nexus-hrm.com',
+    phone: '+20 2 1234 5678',
+    website: 'https://nexus-hrm.com',
+    address: 'Cairo, Egypt',
+  })
+  const upd = (key) => (v) => setProfile(p => ({ ...p, [key]: v }))
+  const save = () => showToast('Company profile saved', 'success')
 
-function Toggle({ checked, onChange, disabled }) {
   return (
-    <button type="button" role="switch" aria-checked={checked} disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${checked ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-600'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
-    </button>
-  )
-}
-
-function NumInput({ value, onChange, disabled, suffix, min }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <input type="number" value={value} onChange={e => onChange(Number(e.target.value))} disabled={disabled} min={min ?? 0}
-        className="w-24 text-right text-sm font-medium border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-      {suffix && <span className="text-xs text-gray-400 whitespace-nowrap">{suffix}</span>}
-    </div>
-  )
-}
-
-function Sel({ value, onChange, options, disabled }) {
-  return (
-    <select value={value} onChange={e => onChange(e.target.value)} disabled={disabled}
-      className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-indigo-500">
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  )
-}
-
-function Row({ label, helper, children }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 p-3 gap-4">
-      <div className="min-w-0 flex-1">
-        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
-        {helper && <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{helper}</p>}
-      </div>
-      {children}
-    </div>
-  )
-}
-
-function SaveBar({ onSave }) {
-  return (
-    <div className="flex justify-end pt-4">
-      <Button size="sm" onClick={onSave}><Save className="h-4 w-4 mr-1.5" />Save</Button>
+    <div className="space-y-4">
+      <SectionCard title="Company Information">
+        <Row label="Company Name"><TextInput value={profile.company_name} onChange={upd('company_name')} /></Row>
+        <Row label="Industry"><TextInput value={profile.industry} onChange={upd('industry')} /></Row>
+        <Row label="Company Size">
+          <Sel value={profile.company_size} onChange={upd('company_size')}
+            options={[{ value: '1-10', label: '1-10 employees' }, { value: '11-50', label: '11-50' }, { value: '50-200', label: '50-200' }, { value: '200-500', label: '200-500' }, { value: '500+', label: '500+' }]} />
+        </Row>
+        <Row label="Country"><TextInput value={profile.country} onChange={upd('country')} /></Row>
+        <Row label="Currency">
+          <Sel value={profile.currency} onChange={upd('currency')}
+            options={[{ value: 'EGP', label: 'EGP - Egyptian Pound' }, { value: 'USD', label: 'USD - US Dollar' }, { value: 'EUR', label: 'EUR - Euro' }, { value: 'SAR', label: 'SAR - Saudi Riyal' }, { value: 'AED', label: 'AED - UAE Dirham' }]} />
+        </Row>
+      </SectionCard>
+      <SectionCard title="Registration & Contact">
+        <Row label="Tax Registration Number"><TextInput value={profile.tax_registration} onChange={upd('tax_registration')} /></Row>
+        <Row label="Contact Email"><TextInput value={profile.contact_email} onChange={upd('contact_email')} /></Row>
+        <Row label="Phone"><TextInput value={profile.phone} onChange={upd('phone')} /></Row>
+        <Row label="Website"><TextInput value={profile.website} onChange={upd('website')} /></Row>
+        <Row label="Address"><TextInput value={profile.address} onChange={upd('address')} /></Row>
+      </SectionCard>
+      <SaveBar onSave={save} />
     </div>
   )
 }
@@ -74,37 +76,13 @@ function BranchesTab() {
 
   const addBranch = async () => {
     if (!newName.trim()) return
-    try {
-      await saveBranch({ name: newName.trim(), is_active: true })
-      setNewName('')
-      showToast('Branch added', 'success')
-    } catch { showToast('Failed to add branch', 'error') }
+    try { await saveBranch({ name: newName.trim(), is_active: true }); setNewName(''); showToast('Branch added', 'success') } catch { showToast('Failed to add branch', 'error') }
   }
+  const handleRemove = async (id) => { try { await removeBranch(id); showToast('Branch removed', 'success') } catch { showToast('Failed to remove branch', 'error') } }
+  const saveEdit = async (id) => { try { await editBranch(id, { name: editName }); setEditingId(null); showToast('Branch updated', 'success') } catch { showToast('Failed to update branch', 'error') } }
+  const toggleActive = async (branch) => { try { await editBranch(branch.id, { name: branch.name, is_active: !branch.is_active }) } catch { showToast('Failed to toggle branch', 'error') } }
 
-  const handleRemove = async (id) => {
-    try {
-      await removeBranch(id)
-      showToast('Branch removed', 'success')
-    } catch { showToast('Failed to remove branch', 'error') }
-  }
-
-  const saveEdit = async (id) => {
-    try {
-      await editBranch(id, { name: editName })
-      setEditingId(null)
-      showToast('Branch updated', 'success')
-    } catch { showToast('Failed to update branch', 'error') }
-  }
-
-  const toggleActive = async (branch) => {
-    try {
-      await editBranch(branch.id, { name: branch.name, is_active: !branch.is_active })
-    } catch { showToast('Failed to toggle branch', 'error') }
-  }
-
-  if (loading) {
-    return <div className="text-sm text-gray-400 py-8 text-center">Loading...</div>
-  }
+  if (loading) return <div className="text-sm text-gray-400 py-8 text-center">Loading...</div>
 
   return (
     <div className="space-y-4">
@@ -145,93 +123,6 @@ function BranchesTab() {
   )
 }
 
-function AttendancePolicyTab() {
-  const { config, saveConfig, updateConfig } = useSystemConfig()
-  const { showToast } = useToast()
-  const p = config
-
-  const save = async () => { try { await saveConfig(config); showToast('Attendance policy saved', 'success') } catch { showToast('Failed to save', 'error') } }
-
-  return (
-    <div className="space-y-4">
-      <div className="card-base p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Basic Settings</h3>
-        <Row label="Working Hours Per Day"><NumInput value={p.working_hours_per_day} onChange={v => updateConfig({ working_hours_per_day: v })} suffix="hours" /></Row>
-        <Row label="Working Days Per Month" helper="Used for salary fraction calculations"><NumInput value={p.working_days_per_month} onChange={v => updateConfig({ working_days_per_month: v })} suffix="days" /></Row>
-        <Row label="Grace Period" helper="Minutes after start time before marked late"><NumInput value={p.grace_period_minutes} onChange={v => updateConfig({ grace_period_minutes: v })} suffix="min" /></Row>
-        <Row label="Standard Start Time">
-          <input type="time" value={p.standard_start_time} onChange={e => updateConfig({ standard_start_time: e.target.value })}
-            className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-        </Row>
-        <Row label="Standard End Time">
-          <input type="time" value={p.standard_end_time} onChange={e => updateConfig({ standard_end_time: e.target.value })}
-            className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-        </Row>
-        <Row label="Weekend Days">
-          <div className="flex gap-1">
-            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-              <button key={d} onClick={() => {
-                const days = p.weekend_days.includes(d) ? p.weekend_days.filter(x => x !== d) : [...p.weekend_days, d]
-                updateConfig({ weekend_days: days })
-              }} className={`px-2 py-1 text-xs rounded-lg border transition-colors ${p.weekend_days.includes(d) ? 'bg-indigo-100 dark:bg-indigo-500/20 border-indigo-300 dark:border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400'}`}>{d.slice(0, 3)}</button>
-            ))}
-          </div>
-        </Row>
-        <SaveBar onSave={save} />
-      </div>
-
-      <div className="card-base p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Absence Deduction</h3>
-        <Row label="Absence Mode">
-          <Sel value={p.absence_mode} onChange={v => updateConfig({ absence_mode: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'progressive', label: 'Progressive' }]} />
-        </Row>
-        {p.absence_mode === 'fixed' ? (
-          <Row label="Fixed Absence Amount" helper="Deducted per absence day"><NumInput value={p.fixed_absence_amount} onChange={v => updateConfig({ fixed_absence_amount: v })} suffix="per day" /></Row>
-        ) : (
-          <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Progressive amounts per day:</p>
-            <div className="flex flex-wrap gap-2">
-              {p.progressive_absence_amounts.map((amt, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <span className="text-xs text-gray-400 w-6">D{i + 1}</span>
-                  <input type="number" value={amt} onChange={e => {
-                    const arr = [...p.progressive_absence_amounts]; arr[i] = Number(e.target.value); updateConfig({ progressive_absence_amounts: arr })
-                  }} className="w-20 text-right text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                </div>
-              ))}
-            </div>
-            <p className="text-[11px] text-gray-400 mt-2">Additional days use the last configured amount</p>
-          </div>
-        )}
-        <SaveBar onSave={save} />
-      </div>
-
-      <div className="card-base p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Late Deduction</h3>
-          <Toggle checked={p.enable_late_deduction} onChange={v => updateConfig({ enable_late_deduction: v })} />
-        </div>
-        {p.enable_late_deduction && (
-          <>
-            <Row label="Late Threshold" helper="Hours after which deduction applies"><NumInput value={p.late_threshold_hours} onChange={v => updateConfig({ late_threshold_hours: v })} suffix="hours" /></Row>
-            <Row label="Deduction Type">
-              <Sel value={p.late_deduction_type} onChange={v => updateConfig({ late_deduction_type: v })} options={[{ value: 'fraction', label: 'Salary Fraction' }, { value: 'fixed', label: 'Fixed Amount' }]} />
-            </Row>
-            {p.late_deduction_type === 'fraction' ? (
-              <Row label="Salary Fraction">
-                <Sel value={p.late_deduction_fraction} onChange={v => updateConfig({ late_deduction_fraction: v })} options={[{ value: 'quarter', label: 'Quarter Day' }, { value: 'half', label: 'Half Day' }, { value: 'full', label: 'Full Day' }]} />
-              </Row>
-            ) : (
-              <Row label="Fixed Late Amount"><NumInput value={p.late_fixed_amount} onChange={v => updateConfig({ late_fixed_amount: v })} suffix="per occurrence" /></Row>
-            )}
-          </>
-        )}
-        <SaveBar onSave={save} />
-      </div>
-    </div>
-  )
-}
-
 function PayrollRulesTab() {
   const { config, saveConfig, updateConfig } = useSystemConfig()
   const { showToast } = useToast()
@@ -241,17 +132,14 @@ function PayrollRulesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="card-base p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payroll Schedule</h3>
+      <SectionCard title="Payroll Schedule" icon={DollarSign}>
         <Row label="Payroll Frequency">
           <Sel value={r.payroll_frequency} onChange={v => updateConfig({ payroll_frequency: v })} options={[{ value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' }]} />
         </Row>
-        <Row label="Default Payroll Day"><NumInput value={r.default_payroll_day} onChange={v => updateConfig({ default_payroll_day: v })} suffix={`of month`} /></Row>
+        <Row label="Default Payroll Day"><NumInput value={r.default_payroll_day} onChange={v => updateConfig({ default_payroll_day: v })} suffix="of month" /></Row>
         <Row label="Working Days Per Month" helper="Used for daily salary calculation: Daily = Basic / Working Days"><NumInput value={r.working_days_per_month} onChange={v => updateConfig({ working_days_per_month: v })} suffix="days" /></Row>
-      </div>
-
-      <div className="card-base p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payroll Options</h3>
+      </SectionCard>
+      <SectionCard title="Payroll Options">
         <Row label="Auto-Generate Payslip"><Toggle checked={r.auto_generate_payslip} onChange={v => updateConfig({ auto_generate_payslip: v })} /></Row>
         <Row label="Allow Negative Salary"><Toggle checked={r.allow_negative_salary} onChange={v => updateConfig({ allow_negative_salary: v })} /></Row>
         <Row label="Overtime Enabled"><Toggle checked={r.overtime_enabled} onChange={v => updateConfig({ overtime_enabled: v })} /></Row>
@@ -261,7 +149,7 @@ function PayrollRulesTab() {
           </Row>
         )}
         <SaveBar onSave={save} />
-      </div>
+      </SectionCard>
     </div>
   )
 }
@@ -273,34 +161,22 @@ function CompanyDeductionsTab() {
 
   const save = async () => { try { await saveConfig(config); showToast('Company deductions saved', 'success'); refreshEmployeeCounts() } catch { showToast('Failed to save', 'error') } }
 
-  const taxPerEmp = calcTaxPerEmployee(config, activeEmployeeCount)
-  const insPerEmp = calcInsurancePerEmployee(config, activeEmployeeCount)
+  const taxPerEmp = activeEmployeeCount > 0 ? (d.annual_tax_bulk_amount || 0) / activeEmployeeCount / (d.payroll_frequency === 'monthly' ? 12 : 52) : 0
+  const insPerEmp = activeEmployeeCount > 0 ? (d.annual_insurance_bulk_amount || 0) / activeEmployeeCount / (d.payroll_frequency === 'monthly' ? 12 : 52) : 0
   const hasEmployees = activeEmployeeCount > 0
   const inactiveCount = totalEmployeeCount - activeEmployeeCount
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
-        <div className="flex items-start gap-2">
-          <Info className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-indigo-700 dark:text-indigo-300">Tax and Company Insurance are company-level bulk amounts distributed automatically across active employees. These are not per-employee manual deductions.</p>
-        </div>
-      </div>
-
-      <div className="card-base p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Company-Level Settings</h3>
+      <InfoBox>Tax and Company Insurance are company-level bulk amounts distributed automatically across active employees. These are not per-employee manual deductions.</InfoBox>
+      <SectionCard title="Company-Level Settings" icon={Building2}>
         <Row label="Annual Tax Bulk Amount"><NumInput value={d.annual_tax_bulk_amount} onChange={v => updateConfig({ annual_tax_bulk_amount: v })} /></Row>
         <Row label="Annual Company Insurance Bulk Amount"><NumInput value={d.annual_insurance_bulk_amount} onChange={v => updateConfig({ annual_insurance_bulk_amount: v })} /></Row>
         <Row label="Payroll Frequency">
           <Sel value={d.payroll_frequency} onChange={v => updateConfig({ payroll_frequency: v })} options={[{ value: 'monthly', label: 'Monthly (/12)' }, { value: 'weekly', label: 'Weekly (/52)' }]} />
         </Row>
-      </div>
-
-      <div className="card-base p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Calculator className="h-4 w-4 text-indigo-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Employee Distribution</h3>
-        </div>
+      </SectionCard>
+      <SectionCard title="Employee Distribution" icon={Users}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3 text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalEmployeeCount}</p>
@@ -315,14 +191,8 @@ function CompanyDeductionsTab() {
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Inactive (Excluded)</p>
           </div>
         </div>
-        <p className="text-[11px] text-gray-400 dark:text-gray-500">Calculated automatically from active employees across all branches. This value updates automatically when employees are added, removed, activated, or deactivated.</p>
-      </div>
-
-      <div className="card-base p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Calculator className="h-4 w-4 text-indigo-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Calculation Preview</h3>
-        </div>
+      </SectionCard>
+      <SectionCard title="Calculation Preview" icon={Calculator}>
         {!hasEmployees ? (
           <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3">
             <p className="text-xs text-amber-700 dark:text-amber-400">No active employees found. Bulk deductions cannot be distributed.</p>
@@ -339,7 +209,7 @@ function CompanyDeductionsTab() {
           </>
         )}
         <SaveBar onSave={save} />
-      </div>
+      </SectionCard>
     </div>
   )
 }
@@ -353,9 +223,9 @@ function MedicalInsuranceTab() {
 
   return (
     <div className="space-y-4">
-      <div className="card-base p-4 space-y-3">
+      <SectionCard title="Medical Insurance" icon={Heart}>
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Medical Insurance</h3>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Enabled</span>
           <Toggle checked={r.medical_insurance_enabled} onChange={v => updateConfig({ medical_insurance_enabled: v })} />
         </div>
         {!r.medical_insurance_enabled && <p className="text-xs text-gray-400">Medical insurance deduction is disabled.</p>}
@@ -372,18 +242,16 @@ function MedicalInsuranceTab() {
             <Row label="Apply To">
               <Sel value={r.medical_apply_to} onChange={v => updateConfig({ medical_apply_to: v })} options={[{ value: 'enabled_only', label: 'Employees with medical insurance enabled' }, { value: 'all_active', label: 'All active employees' }]} />
             </Row>
-            <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
-              <p className="text-xs text-indigo-700 dark:text-indigo-300">
-                {r.medical_deduction_type === 'fixed'
-                  ? `Each eligible employee will have ${r.medical_fixed_monthly_amount} deducted monthly.`
-                  : `Each eligible employee will have ${r.medical_percentage_rate}% of their base salary deducted.`}
-                Employees without medical insurance enabled will not be affected (unless "All active" is selected).
-              </p>
-            </div>
+            <InfoBox>
+              {r.medical_deduction_type === 'fixed'
+                ? `Each eligible employee will have ${r.medical_fixed_monthly_amount} deducted monthly.`
+                : `Each eligible employee will have ${r.medical_percentage_rate}% of their base salary deducted.`}
+              Employees without medical insurance enabled will not be affected (unless &quot;All active&quot; is selected).
+            </InfoBox>
           </>
         )}
         <SaveBar onSave={save} />
-      </div>
+      </SectionCard>
     </div>
   )
 }
@@ -397,9 +265,9 @@ function LoansTab() {
 
   return (
     <div className="space-y-4">
-      <div className="card-base p-4 space-y-3">
+      <SectionCard title="Loan Deduction" icon={Banknote}>
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Loan Deduction</h3>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Enabled</span>
           <Toggle checked={r.loan_enabled} onChange={v => updateConfig({ loan_enabled: v })} />
         </div>
         {!r.loan_enabled && <p className="text-xs text-gray-400">Loan deduction is disabled.</p>}
@@ -411,62 +279,17 @@ function LoansTab() {
             <Row label="Auto-Deduct from Payroll" helper="Automatically deduct loan installments when processing payroll">
               <Toggle checked={r.loan_auto_deduct} onChange={v => updateConfig({ loan_auto_deduct: v })} />
             </Row>
-            <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
-              <p className="text-xs text-indigo-700 dark:text-indigo-300">
-                Only employees with active loans will have deductions applied. Completed or paused loans will not generate deductions.
-              </p>
-            </div>
+            <InfoBox>Only employees with active loans will have deductions applied. Completed or paused loans will not generate deductions.</InfoBox>
           </>
         )}
         <SaveBar onSave={save} />
-      </div>
-    </div>
-  )
-}
-
-function DeductionRulesTab() {
-  const { config } = useSystemConfig()
-
-  const rules = [
-    { source: 'Company-Level Auto', types: ['Tax', 'Company Insurance'], desc: 'Distributed from annual bulk amounts across active employees', icon: Building2, color: 'indigo' },
-    { source: 'Employee Rule Auto', types: ['Medical Insurance', 'Loan'], desc: 'Based on employee flags and configured rules', icon: Heart, color: 'purple' },
-    { source: 'Attendance Rule Auto', types: ['Absence', 'Late Attendance'], desc: 'Calculated from attendance records and policy', icon: Clock, color: 'amber' },
-  ]
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
-        <div className="flex items-start gap-2">
-          <Info className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-indigo-700 dark:text-indigo-300">All deductions are calculated automatically from company configuration and employee records. HR does not need to calculate them manually.</p>
-        </div>
-      </div>
-
-      {rules.map(r => (
-        <div key={r.source} className="card-base p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-${r.color}-100 dark:bg-${r.color}-500/20`}>
-              <r.icon className={`h-4 w-4 text-${r.color}-600 dark:text-${r.color}-400`} />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{r.source}</h3>
-              <p className="text-[11px] text-gray-400">{r.desc}</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {r.types.map(t => (
-              <span key={t} className="rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">{t}</span>
-            ))}
-          </div>
-        </div>
-      ))}
+      </SectionCard>
     </div>
   )
 }
 
 function PermissionsTab() {
   const { user, isAdmin } = useAuth()
-
   const isSuperAdmin = user?.roles?.[0]?.slug === 'super_admin'
 
   const perms = [
@@ -474,7 +297,7 @@ function PermissionsTab() {
     { action: 'Edit Tax & Insurance Bulk Amounts', superAdmin: true, hrAdmin: false, manager: false, employee: false },
     { action: 'Edit Medical Insurance Rules', superAdmin: true, hrAdmin: false, manager: false, employee: false },
     { action: 'Edit Loan Rules', superAdmin: true, hrAdmin: false, manager: false, employee: false },
-    { action: 'Edit Attendance Policy', superAdmin: true, hrAdmin: false, manager: false, employee: false },
+    { action: 'Edit Attendance Configuration', superAdmin: true, hrAdmin: false, manager: false, employee: false },
     { action: 'Edit Payroll Rules', superAdmin: true, hrAdmin: false, manager: false, employee: false },
     { action: 'Manage Branches', superAdmin: true, hrAdmin: true, manager: false, employee: false },
     { action: 'View System Configuration', superAdmin: true, hrAdmin: true, manager: false, employee: false },
@@ -485,16 +308,10 @@ function PermissionsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
-        <div className="flex items-start gap-2">
-          <Shield className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-indigo-700 dark:text-indigo-300">
-            Your role: <strong>{isSuperAdmin ? 'Super Admin' : isAdmin ? 'HR Admin' : 'N/A'}</strong>.
-            Super Admin has full access. HR Admin can view but cannot edit critical financial rules.
-          </p>
-        </div>
-      </div>
-
+      <InfoBox>
+        Your role: <strong>{isSuperAdmin ? 'Super Admin' : isAdmin ? 'HR Admin' : 'N/A'}</strong>.
+        Super Admin has full access. HR Admin can view but cannot edit critical financial rules.
+      </InfoBox>
       <div className="card-base overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -512,11 +329,7 @@ function PermissionsTab() {
                   <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{p.action}</td>
                   {roles.map(r => (
                     <td key={r} className="text-center px-4 py-2.5">
-                      {p[r] ? (
-                        <Check className="h-4 w-4 text-emerald-500 inline" />
-                      ) : (
-                        <X className="h-4 w-4 text-gray-300 dark:text-gray-600 inline" />
-                      )}
+                      {p[r] ? <Check className="h-4 w-4 text-emerald-500 inline" /> : <X className="h-4 w-4 text-gray-300 dark:text-gray-600 inline" />}
                     </td>
                   ))}
                 </tr>
@@ -529,24 +342,54 @@ function PermissionsTab() {
   )
 }
 
-export default function SystemConfiguration() {
-  const { t } = useI18n()
-  const { isAdmin, loading: configLoading } = useSystemConfig()
-  const [activeTab, setActiveTab] = useState('branches')
+function LanguageSection() {
   const { showToast } = useToast()
+  const [lang, setLang] = useState({
+    display_language: 'en',
+    date_format: 'dd/mm/yyyy',
+    time_format: '24h',
+    currency_symbol: 'EGP',
+    first_day_of_week: 'monday',
+  })
+  const upd = (key) => (v) => setLang(p => ({ ...p, [key]: v }))
+  const save = () => {
+    showToast('Language preferences saved', 'success')
+    if (lang.display_language === 'fr') showToast('Display language set to French (requires page reload)', 'info')
+  }
 
-  const canEdit = isAdmin
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Display Settings" icon={Globe}>
+        <Row label="Display Language">
+          <Sel value={lang.display_language} onChange={upd('display_language')}
+            options={[{ value: 'en', label: 'English' }, { value: 'fr', label: 'French' }]} />
+        </Row>
+        <Row label="Date Format">
+          <Sel value={lang.date_format} onChange={upd('date_format')}
+            options={[{ value: 'dd/mm/yyyy', label: 'DD/MM/YYYY' }, { value: 'mm/dd/yyyy', label: 'MM/DD/YYYY' }, { value: 'yyyy-mm-dd', label: 'YYYY-MM-DD' }]} />
+        </Row>
+        <Row label="Time Format">
+          <Sel value={lang.time_format} onChange={upd('time_format')}
+            options={[{ value: '12h', label: '12 Hour' }, { value: '24h', label: '24 Hour' }]} />
+        </Row>
+        <Row label="Currency Symbol">
+          <Sel value={lang.currency_symbol} onChange={upd('currency_symbol')}
+            options={[{ value: 'EGP', label: 'EGP (E£)' }, { value: 'USD', label: 'USD ($)' }, { value: 'EUR', label: 'EUR (€)' }, { value: 'SAR', label: 'SAR (﷼)' }, { value: 'AED', label: 'AED (د.إ)' }]} />
+        </Row>
+        <Row label="First Day of Week">
+          <Sel value={lang.first_day_of_week} onChange={upd('first_day_of_week')}
+            options={[{ value: 'monday', label: 'Monday' }, { value: 'sunday', label: 'Sunday' }, { value: 'saturday', label: 'Saturday' }]} />
+        </Row>
+        <SaveBar onSave={save} />
+      </SectionCard>
+    </div>
+  )
+}
 
-  const tabs = [
-    { id: 'branches', label: 'Branches', icon: GitBranch },
-    { id: 'attendance', label: 'Attendance Policy', icon: Clock },
-    { id: 'payroll', label: 'Payroll Rules', icon: DollarSign },
-    { id: 'company', label: 'Company Deductions', icon: Building2 },
-    { id: 'medical', label: 'Medical Insurance', icon: Heart },
-    { id: 'loans', label: 'Loans', icon: Banknote },
-    { id: 'rules', label: 'Deduction Rules', icon: Shield },
-    { id: 'permissions', label: 'Permissions', icon: Lock },
-  ]
+export default function SystemConfiguration() {
+  const { loading: configLoading } = useSystemConfig()
+  const { isAdmin } = useAuth()
+  const [activeSection, setActiveSection] = useState('profile')
 
   if (configLoading) {
     return <div className="flex items-center justify-center h-64"><p className="text-sm text-gray-400">Loading configuration...</p></div>
@@ -555,32 +398,44 @@ export default function SystemConfiguration() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={fadeUp}>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">System Configuration</h1>
-          <p className="mt-1 text-sm text-gray-500">Configure automated HR and payroll rules for your company</p>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">System Configuration</h1>
+        <p className="mt-1 text-sm text-gray-500">Configure automated HR and payroll rules for your company</p>
       </motion.div>
 
-      {!canEdit && (
+      {!isAdmin && (
         <motion.div variants={fadeUp} className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3">
           <p className="text-xs text-amber-700 dark:text-amber-400">Only Super Admin can edit System Configuration. You have view access only.</p>
         </motion.div>
       )}
 
       <motion.div variants={fadeUp}>
-        <div className="card-base">
-          <div className="overflow-x-auto border-b border-gray-200 dark:border-gray-700 px-4 pt-2">
-            <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="w-full lg:w-60 shrink-0">
+            <nav className="card-base p-2 space-y-0.5 lg:sticky lg:top-4">
+              {SECTIONS.map(section => {
+                const Icon = section.icon
+                const active = activeSection === section.id
+                return (
+                  <button key={section.id} onClick={() => setActiveSection(section.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 text-left ${active ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200'}`}>
+                    <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'}`} />
+                    {section.label}
+                  </button>
+                )
+              })}
+            </nav>
           </div>
-          <div className="p-4">
-            {activeTab === 'branches' && <BranchesTab />}
-            {activeTab === 'attendance' && <AttendancePolicyTab />}
-            {activeTab === 'payroll' && <PayrollRulesTab />}
-            {activeTab === 'company' && <CompanyDeductionsTab />}
-            {activeTab === 'medical' && <MedicalInsuranceTab />}
-            {activeTab === 'loans' && <LoansTab />}
-            {activeTab === 'rules' && <DeductionRulesTab />}
-            {activeTab === 'permissions' && <PermissionsTab />}
+
+          <div className="flex-1 min-w-0">
+            {activeSection === 'profile' && <CompanyProfileSection />}
+            {activeSection === 'branches' && <BranchesTab />}
+            {activeSection === 'attendance' && <AttendanceConfiguration />}
+            {activeSection === 'payroll' && <PayrollRulesTab />}
+            {activeSection === 'company' && <CompanyDeductionsTab />}
+            {activeSection === 'medical' && <MedicalInsuranceTab />}
+            {activeSection === 'loans' && <LoansTab />}
+            {activeSection === 'permissions' && <PermissionsTab />}
+            {activeSection === 'language' && <LanguageSection />}
           </div>
         </div>
       </motion.div>
