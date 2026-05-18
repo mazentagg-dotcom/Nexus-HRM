@@ -27,18 +27,22 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	loanRepo := repositories.NewLoanRepository(db)
 	deductionRepo := repositories.NewDeductionRepository(db)
 	requestRepo := repositories.NewRequestRepository(db)
+	configRepo := repositories.NewSystemConfigRepository(db)
+	branchRepo := repositories.NewBranchRepository(db)
 
 	authSvc := services.NewAuthService(userRepo, roleRepo, cfg.JWTSecret, cfg.JWTExpiry)
 	userSvc := services.NewUserService(userRepo)
 	roleSvc := services.NewRoleService(roleRepo)
 	notifSvc := services.NewNotificationService(notifRepo)
 	hrSvc := services.NewHRService(deptRepo, empRepo, attRepo, leaveRepo, payrollRepo, docRepo, notifSvc, loanRepo, deductionRepo, requestRepo)
+	configSvc := services.NewSystemConfigService(configRepo, branchRepo)
 
 	authHandler := handlers.NewAuthHandler(authSvc)
 	userHandler := handlers.NewUserHandler(userSvc)
 	roleHandler := handlers.NewRoleHandler(roleSvc)
 	notifHandler := handlers.NewNotificationsHandler(notifSvc)
 	hrHandler := handlers.NewHRHandler(hrSvc, db)
+	configHandler := handlers.NewSystemConfigHandler(configSvc)
 
 	auth := r.Group("/api/v1/auth")
 	{
@@ -142,6 +146,12 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 			hr.PUT("/requests/:id/approve", hrHandler.ApproveRequest)
 			hr.PUT("/requests/:id/reject", hrHandler.RejectRequest)
 			hr.GET("/managers/:id/team", hrHandler.GetEmployeesByManager)
+			hr.GET("/system-config", configHandler.GetConfig)
+			hr.PUT("/system-config", middleware.RequirePermission("settings.edit"), configHandler.UpdateConfig)
+			hr.GET("/branches", configHandler.GetBranches)
+			hr.POST("/branches", middleware.RequirePermission("settings.edit"), configHandler.CreateBranch)
+			hr.PUT("/branches/:id", middleware.RequirePermission("settings.edit"), configHandler.UpdateBranch)
+			hr.DELETE("/branches/:id", middleware.RequirePermission("settings.edit"), configHandler.DeleteBranch)
 		}
 	}
 }

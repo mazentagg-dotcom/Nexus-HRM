@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Tabs from '../../components/ui/Tabs'
 import Button from '../../components/Button'
@@ -8,7 +8,7 @@ import { useI18n } from '../../i18n'
 import { useAuth } from '../../hooks/useAuth'
 import {
   GitBranch, Clock, DollarSign, Building2, Heart, Banknote, Shield, Lock,
-  Plus, Trash2, Edit3, Check, X, Info, Calculator, Save, RotateCcw,
+  Plus, Trash2, Edit3, Check, X, Info, Calculator, Save,
 } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -66,35 +66,44 @@ function SaveBar({ onSave }) {
 }
 
 function BranchesTab() {
-  const { config, updateConfig } = useSystemConfig()
+  const { branches, saveBranch, editBranch, removeBranch, loading } = useSystemConfig()
   const { showToast } = useToast()
   const [newName, setNewName] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
 
-  const save = () => showToast('Branches saved', 'success')
-
-  const addBranch = () => {
+  const addBranch = async () => {
     if (!newName.trim()) return
-    const id = Math.max(0, ...config.branches.map(b => b.id)) + 1
-    updateConfig('branches', { branches: [...config.branches, { id, name: newName.trim(), active: true }] })
-    setNewName('')
-    showToast('Branch added', 'success')
+    try {
+      await saveBranch({ name: newName.trim(), is_active: true })
+      setNewName('')
+      showToast('Branch added', 'success')
+    } catch { showToast('Failed to add branch', 'error') }
   }
 
-  const removeBranch = (id) => {
-    updateConfig('branches', { branches: config.branches.filter(b => b.id !== id) })
-    showToast('Branch removed', 'success')
+  const handleRemove = async (id) => {
+    try {
+      await removeBranch(id)
+      showToast('Branch removed', 'success')
+    } catch { showToast('Failed to remove branch', 'error') }
   }
 
-  const saveEdit = (id) => {
-    updateConfig('branches', { branches: config.branches.map(b => b.id === id ? { ...b, name: editName } : b) })
-    setEditingId(null)
-    showToast('Branch updated', 'success')
+  const saveEdit = async (id) => {
+    try {
+      await editBranch(id, { name: editName })
+      setEditingId(null)
+      showToast('Branch updated', 'success')
+    } catch { showToast('Failed to update branch', 'error') }
   }
 
-  const toggleActive = (id) => {
-    updateConfig('branches', { branches: config.branches.map(b => b.id === id ? { ...b, active: !b.active } : b) })
+  const toggleActive = async (branch) => {
+    try {
+      await editBranch(branch.id, { name: branch.name, is_active: !branch.is_active })
+    } catch { showToast('Failed to toggle branch', 'error') }
+  }
+
+  if (loading) {
+    return <div className="text-sm text-gray-400 py-8 text-center">Loading...</div>
   }
 
   return (
@@ -106,7 +115,7 @@ function BranchesTab() {
           <Button size="sm" icon={Plus} onClick={addBranch}>Add</Button>
         </div>
         <div className="space-y-2">
-          {config.branches.map(b => (
+          {branches.map(b => (
             <div key={b.id} className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 p-3">
               {editingId === b.id ? (
                 <div className="flex items-center gap-2 flex-1">
@@ -118,33 +127,32 @@ function BranchesTab() {
               ) : (
                 <>
                   <div className="flex items-center gap-3">
-                    <Toggle checked={b.active} onChange={() => toggleActive(b.id)} />
-                    <span className={`text-sm ${b.active ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 line-through'}`}>{b.name}</span>
+                    <Toggle checked={b.is_active} onChange={() => toggleActive(b)} />
+                    <span className={`text-sm ${b.is_active ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 line-through'}`}>{b.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => { setEditingId(b.id); setEditName(b.name) }} className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"><Edit3 className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => removeBranch(b.id)} className="rounded p-1 text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleRemove(b.id)} className="rounded p-1 text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </>
               )}
             </div>
           ))}
-          {config.branches.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No branches configured</p>}
+          {branches.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No branches configured</p>}
         </div>
-        <SaveBar onSave={save} />
       </div>
     </div>
   )
 }
 
 function AttendancePolicyTab() {
-  const { config, updateConfig } = useSystemConfig()
+  const { config, saveConfig } = useSystemConfig()
   const { showToast } = useToast()
-  const p = config.attendancePolicy
+  const p = config
 
-  const save = () => { showToast('Attendance policy saved', 'success') }
+  const save = async () => { try { await saveConfig(null, config); showToast('Attendance policy saved', 'success') } catch { showToast('Failed to save', 'error') } }
 
-  const upd = (data) => updateConfig('attendancePolicy', data)
+  const upd = (data) => { Object.assign(config, data) }
 
   return (
     <div className="space-y-4">
@@ -177,19 +185,19 @@ function AttendancePolicyTab() {
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Absence Deduction</h3>
         <Row label="Absence Mode">
-          <Sel value={p.absenceMode} onChange={v => upd({ absenceMode: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'progressive', label: 'Progressive' }]} />
+          <Sel value={p.absence_mode} onChange={v => upd({ absence_mode: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'progressive', label: 'Progressive' }]} />
         </Row>
-        {p.absenceMode === 'fixed' ? (
-          <Row label="Fixed Absence Amount" helper="Deducted per absence day"><NumInput value={p.fixedAbsenceAmount} onChange={v => upd({ fixedAbsenceAmount: v })} suffix="per day" /></Row>
+        {p.absence_mode === 'fixed' ? (
+          <Row label="Fixed Absence Amount" helper="Deducted per absence day"><NumInput value={p.fixed_absence_amount} onChange={v => upd({ fixed_absence_amount: v })} suffix="per day" /></Row>
         ) : (
           <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Progressive amounts per day:</p>
             <div className="flex flex-wrap gap-2">
-              {p.progressiveAbsenceAmounts.map((amt, i) => (
+              {p.progressive_absence_amounts.map((amt, i) => (
                 <div key={i} className="flex items-center gap-1">
                   <span className="text-xs text-gray-400 w-6">D{i + 1}</span>
                   <input type="number" value={amt} onChange={e => {
-                    const arr = [...p.progressiveAbsenceAmounts]; arr[i] = Number(e.target.value); upd({ progressiveAbsenceAmounts: arr })
+                    const arr = [...p.progressive_absence_amounts]; arr[i] = Number(e.target.value); upd({ progressive_absence_amounts: arr })
                   }} className="w-20 text-right text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 </div>
               ))}
@@ -203,20 +211,20 @@ function AttendancePolicyTab() {
       <div className="card-base p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Late Deduction</h3>
-          <Toggle checked={p.enableLateDeduction} onChange={v => upd({ enableLateDeduction: v })} />
+          <Toggle checked={p.enable_late_deduction} onChange={v => upd({ enable_late_deduction: v })} />
         </div>
-        {p.enableLateDeduction && (
+        {p.enable_late_deduction && (
           <>
-            <Row label="Late Threshold" helper="Hours after which deduction applies"><NumInput value={p.lateThresholdHours} onChange={v => upd({ lateThresholdHours: v })} suffix="hours" /></Row>
+            <Row label="Late Threshold" helper="Hours after which deduction applies"><NumInput value={p.late_threshold_hours} onChange={v => upd({ late_threshold_hours: v })} suffix="hours" /></Row>
             <Row label="Deduction Type">
-              <Sel value={p.lateDeductionType} onChange={v => upd({ lateDeductionType: v })} options={[{ value: 'fraction', label: 'Salary Fraction' }, { value: 'fixed', label: 'Fixed Amount' }]} />
+              <Sel value={p.late_deduction_type} onChange={v => upd({ late_deduction_type: v })} options={[{ value: 'fraction', label: 'Salary Fraction' }, { value: 'fixed', label: 'Fixed Amount' }]} />
             </Row>
-            {p.lateDeductionType === 'fraction' ? (
+            {p.late_deduction_type === 'fraction' ? (
               <Row label="Salary Fraction">
-                <Sel value={p.lateDeductionFraction} onChange={v => upd({ lateDeductionFraction: v })} options={[{ value: 'quarter', label: 'Quarter Day' }, { value: 'half', label: 'Half Day' }, { value: 'full', label: 'Full Day' }]} />
+                <Sel value={p.late_deduction_fraction} onChange={v => upd({ late_deduction_fraction: v })} options={[{ value: 'quarter', label: 'Quarter Day' }, { value: 'half', label: 'Half Day' }, { value: 'full', label: 'Full Day' }]} />
               </Row>
             ) : (
-              <Row label="Fixed Late Amount"><NumInput value={p.lateFixedAmount} onChange={v => upd({ lateFixedAmount: v })} suffix="per occurrence" /></Row>
+              <Row label="Fixed Late Amount"><NumInput value={p.late_fixed_amount} onChange={v => upd({ late_fixed_amount: v })} suffix="per occurrence" /></Row>
             )}
           </>
         )}
@@ -227,32 +235,32 @@ function AttendancePolicyTab() {
 }
 
 function PayrollRulesTab() {
-  const { config, updateConfig } = useSystemConfig()
+  const { config, saveConfig } = useSystemConfig()
   const { showToast } = useToast()
-  const r = config.payrollRules
+  const r = config
 
-  const save = () => showToast('Payroll rules saved', 'success')
-  const upd = (data) => updateConfig('payrollRules', data)
+  const save = async () => { try { await saveConfig(null, config); showToast('Payroll rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
+  const upd = (data) => { Object.assign(config, data) }
 
   return (
     <div className="space-y-4">
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payroll Schedule</h3>
         <Row label="Payroll Frequency">
-          <Sel value={r.frequency} onChange={v => upd({ frequency: v })} options={[{ value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' }]} />
+          <Sel value={r.payroll_frequency} onChange={v => upd({ payroll_frequency: v })} options={[{ value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' }]} />
         </Row>
-        <Row label="Default Payroll Day"><NumInput value={r.defaultPayrollDay} onChange={v => upd({ defaultPayrollDay: v })} suffix={`of month`} /></Row>
-        <Row label="Working Days Per Month" helper="Used for daily salary calculation: Daily = Basic / Working Days"><NumInput value={r.workingDaysPerMonth} onChange={v => upd({ workingDaysPerMonth: v })} suffix="days" /></Row>
+        <Row label="Default Payroll Day"><NumInput value={r.default_payroll_day} onChange={v => upd({ default_payroll_day: v })} suffix={`of month`} /></Row>
+        <Row label="Working Days Per Month" helper="Used for daily salary calculation: Daily = Basic / Working Days"><NumInput value={r.working_days_per_month} onChange={v => upd({ working_days_per_month: v })} suffix="days" /></Row>
       </div>
 
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payroll Options</h3>
-        <Row label="Auto-Generate Payslip"><Toggle checked={r.autoGeneratePayslip} onChange={v => upd({ autoGeneratePayslip: v })} /></Row>
-        <Row label="Allow Negative Salary"><Toggle checked={r.allowNegativeSalary} onChange={v => upd({ allowNegativeSalary: v })} /></Row>
-        <Row label="Overtime Enabled"><Toggle checked={r.overtimeEnabled} onChange={v => upd({ overtimeEnabled: v })} /></Row>
-        {r.overtimeEnabled && (
+        <Row label="Auto-Generate Payslip"><Toggle checked={r.auto_generate_payslip} onChange={v => upd({ auto_generate_payslip: v })} /></Row>
+        <Row label="Allow Negative Salary"><Toggle checked={r.allow_negative_salary} onChange={v => upd({ allow_negative_salary: v })} /></Row>
+        <Row label="Overtime Enabled"><Toggle checked={r.overtime_enabled} onChange={v => upd({ overtime_enabled: v })} /></Row>
+        {r.overtime_enabled && (
           <Row label="Overtime Rate Multiplier" helper="Overtime Pay = Hours x (Daily Salary / Hours Per Day) x Rate">
-            <NumInput value={r.overtimeRateMultiplier} onChange={v => upd({ overtimeRateMultiplier: v })} suffix="x" min={0.1} />
+            <NumInput value={r.overtime_rate_multiplier} onChange={v => upd({ overtime_rate_multiplier: v })} suffix="x" min={0.1} />
           </Row>
         )}
         <SaveBar onSave={save} />
@@ -262,12 +270,12 @@ function PayrollRulesTab() {
 }
 
 function CompanyDeductionsTab() {
-  const { config, updateConfig, activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts } = useSystemConfig()
+  const { config, saveConfig, activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts } = useSystemConfig()
   const { showToast } = useToast()
-  const d = config.companyLevelDeductions
+  const d = config
 
-  const save = () => { showToast('Company deductions saved', 'success'); refreshEmployeeCounts() }
-  const upd = (data) => updateConfig('companyLevelDeductions', data)
+  const save = async () => { try { await saveConfig(null, config); showToast('Company deductions saved', 'success'); refreshEmployeeCounts() } catch { showToast('Failed to save', 'error') } }
+  const upd = (data) => { Object.assign(config, data) }
 
   const taxPerEmp = calcTaxPerEmployee(config, activeEmployeeCount)
   const insPerEmp = calcInsurancePerEmployee(config, activeEmployeeCount)
@@ -285,10 +293,10 @@ function CompanyDeductionsTab() {
 
       <div className="card-base p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Company-Level Settings</h3>
-        <Row label="Annual Tax Bulk Amount"><NumInput value={d.annualTaxBulkAmount} onChange={v => upd({ annualTaxBulkAmount: v })} /></Row>
-        <Row label="Annual Company Insurance Bulk Amount"><NumInput value={d.annualInsuranceBulkAmount} onChange={v => upd({ annualInsuranceBulkAmount: v })} /></Row>
+        <Row label="Annual Tax Bulk Amount"><NumInput value={d.annual_tax_bulk_amount} onChange={v => upd({ annual_tax_bulk_amount: v })} /></Row>
+        <Row label="Annual Company Insurance Bulk Amount"><NumInput value={d.annual_insurance_bulk_amount} onChange={v => upd({ annual_insurance_bulk_amount: v })} /></Row>
         <Row label="Payroll Frequency">
-          <Sel value={d.frequency} onChange={v => upd({ frequency: v })} options={[{ value: 'monthly', label: 'Monthly (/12)' }, { value: 'weekly', label: 'Weekly (/52)' }]} />
+          <Sel value={d.payroll_frequency} onChange={v => upd({ payroll_frequency: v })} options={[{ value: 'monthly', label: 'Monthly (/12)' }, { value: 'weekly', label: 'Weekly (/52)' }]} />
         </Row>
       </div>
 
@@ -325,11 +333,11 @@ function CompanyDeductionsTab() {
           </div>
         ) : (
           <>
-            <Row label="Tax Per Employee Per Year"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmt(d.annualTaxBulkAmount / activeEmployeeCount)}</span></Row>
-            <Row label={`Tax Per Employee Per ${d.frequency === 'monthly' ? 'Month' : 'Week'}`}><span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{fmt(taxPerEmp)}</span></Row>
+            <Row label="Tax Per Employee Per Year"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmt(d.annual_tax_bulk_amount / activeEmployeeCount)}</span></Row>
+            <Row label={`Tax Per Employee Per ${d.payroll_frequency === 'monthly' ? 'Month' : 'Week'}`}><span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{fmt(taxPerEmp)}</span></Row>
             <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
-            <Row label="Insurance Per Employee Per Year"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmt(d.annualInsuranceBulkAmount / activeEmployeeCount)}</span></Row>
-            <Row label={`Insurance Per Employee Per ${d.frequency === 'monthly' ? 'Month' : 'Week'}`}><span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{fmt(insPerEmp)}</span></Row>
+            <Row label="Insurance Per Employee Per Year"><span className="text-sm font-medium text-gray-900 dark:text-gray-100">{fmt(d.annual_insurance_bulk_amount / activeEmployeeCount)}</span></Row>
+            <Row label={`Insurance Per Employee Per ${d.payroll_frequency === 'monthly' ? 'Month' : 'Week'}`}><span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{fmt(insPerEmp)}</span></Row>
             <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
             <Row label="Total Per Employee Per Period"><span className="text-lg font-bold text-gray-900 dark:text-gray-100">{fmt(taxPerEmp + insPerEmp)}</span></Row>
           </>
@@ -341,39 +349,39 @@ function CompanyDeductionsTab() {
 }
 
 function MedicalInsuranceTab() {
-  const { config, updateConfig } = useSystemConfig()
+  const { config, saveConfig } = useSystemConfig()
   const { showToast } = useToast()
-  const r = config.medicalInsuranceRules
+  const r = config
 
-  const save = () => showToast('Medical insurance rules saved', 'success')
-  const upd = (data) => updateConfig('medicalInsuranceRules', data)
+  const save = async () => { try { await saveConfig(null, config); showToast('Medical insurance rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
+  const upd = (data) => { Object.assign(config, data) }
 
   return (
     <div className="space-y-4">
       <div className="card-base p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Medical Insurance</h3>
-          <Toggle checked={r.enabled} onChange={v => upd({ enabled: v })} />
+          <Toggle checked={r.medical_insurance_enabled} onChange={v => upd({ medical_insurance_enabled: v })} />
         </div>
-        {!r.enabled && <p className="text-xs text-gray-400">Medical insurance deduction is disabled.</p>}
-        {r.enabled && (
+        {!r.medical_insurance_enabled && <p className="text-xs text-gray-400">Medical insurance deduction is disabled.</p>}
+        {r.medical_insurance_enabled && (
           <>
             <Row label="Deduction Type">
-              <Sel value={r.deductionType} onChange={v => upd({ deductionType: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'percentage', label: 'Percentage of Base Salary' }]} />
+              <Sel value={r.medical_deduction_type} onChange={v => upd({ medical_deduction_type: v })} options={[{ value: 'fixed', label: 'Fixed Amount' }, { value: 'percentage', label: 'Percentage of Base Salary' }]} />
             </Row>
-            {r.deductionType === 'fixed' ? (
-              <Row label="Fixed Monthly Amount"><NumInput value={r.fixedMonthlyAmount} onChange={v => upd({ fixedMonthlyAmount: v })} /></Row>
+            {r.medical_deduction_type === 'fixed' ? (
+              <Row label="Fixed Monthly Amount"><NumInput value={r.medical_fixed_monthly_amount} onChange={v => upd({ medical_fixed_monthly_amount: v })} /></Row>
             ) : (
-              <Row label="Percentage Rate"><NumInput value={r.percentageRate} onChange={v => upd({ percentageRate: v })} suffix="%" /></Row>
+              <Row label="Percentage Rate"><NumInput value={r.medical_percentage_rate} onChange={v => upd({ medical_percentage_rate: v })} suffix="%" /></Row>
             )}
             <Row label="Apply To">
-              <Sel value={r.applyTo} onChange={v => upd({ applyTo: v })} options={[{ value: 'enabled_only', label: 'Employees with medical insurance enabled' }, { value: 'all_active', label: 'All active employees' }]} />
+              <Sel value={r.medical_apply_to} onChange={v => upd({ medical_apply_to: v })} options={[{ value: 'enabled_only', label: 'Employees with medical insurance enabled' }, { value: 'all_active', label: 'All active employees' }]} />
             </Row>
             <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
               <p className="text-xs text-indigo-700 dark:text-indigo-300">
-                {r.deductionType === 'fixed'
-                  ? `Each eligible employee will have ${r.fixedMonthlyAmount} deducted monthly.`
-                  : `Each eligible employee will have ${r.percentageRate}% of their base salary deducted.`}
+                {r.medical_deduction_type === 'fixed'
+                  ? `Each eligible employee will have ${r.medical_fixed_monthly_amount} deducted monthly.`
+                  : `Each eligible employee will have ${r.medical_percentage_rate}% of their base salary deducted.`}
                 Employees without medical insurance enabled will not be affected (unless "All active" is selected).
               </p>
             </div>
@@ -386,28 +394,28 @@ function MedicalInsuranceTab() {
 }
 
 function LoansTab() {
-  const { config, updateConfig } = useSystemConfig()
+  const { config, saveConfig } = useSystemConfig()
   const { showToast } = useToast()
-  const r = config.loanRules
+  const r = config
 
-  const save = () => showToast('Loan rules saved', 'success')
-  const upd = (data) => updateConfig('loanRules', data)
+  const save = async () => { try { await saveConfig(null, config); showToast('Loan rules saved', 'success') } catch { showToast('Failed to save', 'error') } }
+  const upd = (data) => { Object.assign(config, data) }
 
   return (
     <div className="space-y-4">
       <div className="card-base p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Loan Deduction</h3>
-          <Toggle checked={r.enabled} onChange={v => upd({ enabled: v })} />
+          <Toggle checked={r.loan_enabled} onChange={v => upd({ loan_enabled: v })} />
         </div>
-        {!r.enabled && <p className="text-xs text-gray-400">Loan deduction is disabled.</p>}
-        {r.enabled && (
+        {!r.loan_enabled && <p className="text-xs text-gray-400">Loan deduction is disabled.</p>}
+        {r.loan_enabled && (
           <>
             <Row label="Default Deduction Behavior">
-              <Sel value={r.defaultBehavior} onChange={v => upd({ defaultBehavior: v })} options={[{ value: 'fixed_installment', label: 'Fixed Monthly Installment' }, { value: 'remaining_divided', label: 'Remaining Balance / Remaining Months' }]} />
+              <Sel value={r.loan_default_behavior} onChange={v => upd({ loan_default_behavior: v })} options={[{ value: 'fixed_installment', label: 'Fixed Monthly Installment' }, { value: 'remaining_divided', label: 'Remaining Balance / Remaining Months' }]} />
             </Row>
             <Row label="Auto-Deduct from Payroll" helper="Automatically deduct loan installments when processing payroll">
-              <Toggle checked={r.autoDeductFromPayroll} onChange={v => upd({ autoDeductFromPayroll: v })} />
+              <Toggle checked={r.loan_auto_deduct} onChange={v => upd({ loan_auto_deduct: v })} />
             </Row>
             <div className="rounded-lg border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-900/20 p-3">
               <p className="text-xs text-indigo-700 dark:text-indigo-300">
@@ -529,9 +537,8 @@ function PermissionsTab() {
 
 export default function SystemConfiguration() {
   const { t } = useI18n()
-  const { isAdmin } = useAuth()
+  const { isAdmin, loading: configLoading } = useSystemConfig()
   const [activeTab, setActiveTab] = useState('branches')
-  const { config, resetConfig } = useSystemConfig()
   const { showToast } = useToast()
 
   const canEdit = isAdmin
@@ -547,20 +554,16 @@ export default function SystemConfiguration() {
     { id: 'permissions', label: 'Permissions', icon: Lock },
   ]
 
+  if (configLoading) {
+    return <div className="flex items-center justify-center h-64"><p className="text-sm text-gray-400">Loading configuration...</p></div>
+  }
+
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={fadeUp}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">System Configuration</h1>
-            <p className="mt-1 text-sm text-gray-500">Configure automated HR and payroll rules for your company</p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => { resetConfig(); showToast('Configuration reset to defaults', 'success') }}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <RotateCcw className="h-3.5 w-3.5" />Reset Defaults
-            </button>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">System Configuration</h1>
+          <p className="mt-1 text-sm text-gray-500">Configure automated HR and payroll rules for your company</p>
         </div>
       </motion.div>
 

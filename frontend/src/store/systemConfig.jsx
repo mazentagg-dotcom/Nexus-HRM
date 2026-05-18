@@ -1,114 +1,169 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import api from '../api/axios'
 
 const SystemConfigContext = createContext(null)
 
-const STORAGE_KEY = 'nexus_system_config'
-
 const defaultConfig = {
-  branches: [
-    { id: 1, name: 'Main Office', active: true },
-    { id: 2, name: 'South Branch', active: true },
-    { id: 3, name: 'West Branch', active: true },
-    { id: 4, name: 'Downtown Branch', active: true },
-    { id: 5, name: 'Customer Service Center', active: true },
-    { id: 6, name: 'Corporate Headquarters', active: true },
-  ],
-  attendancePolicy: {
-    workingHoursPerDay: 8,
-    workingDaysPerMonth: 22,
-    gracePeriodMinutes: 15,
-    standardStartTime: '09:00',
-    standardEndTime: '17:00',
-    weekendDays: ['Saturday', 'Sunday'],
-    absenceMode: 'fixed',
-    fixedAbsenceAmount: 100,
-    progressiveAbsenceAmounts: [50, 100, 200, 400, 800],
-    enableLateDeduction: true,
-    lateThresholdHours: 3,
-    lateDeductionType: 'fraction',
-    lateDeductionFraction: 'quarter',
-    lateFixedAmount: 0,
-  },
-  payrollRules: {
-    frequency: 'monthly',
-    defaultPayrollDay: 28,
-    workingDaysPerMonth: 22,
-    autoGeneratePayslip: true,
-    allowNegativeSalary: false,
-    overtimeEnabled: true,
-    overtimeRateMultiplier: 1.5,
-  },
-  companyLevelDeductions: {
-    annualTaxBulkAmount: 1000000,
-    annualInsuranceBulkAmount: 600000,
-    frequency: 'monthly',
-  },
-  medicalInsuranceRules: {
-    enabled: true,
-    deductionType: 'fixed',
-    fixedMonthlyAmount: 300,
-    percentageRate: 2,
-    applyTo: 'enabled_only',
-  },
-  loanRules: {
-    enabled: true,
-    defaultBehavior: 'fixed_installment',
-    autoDeductFromPayroll: true,
-  },
+  working_hours_per_day: 8,
+  working_days_per_month: 22,
+  grace_period_minutes: 15,
+  standard_start_time: '09:00',
+  standard_end_time: '17:00',
+  weekend_days: ['Saturday', 'Sunday'],
+  absence_mode: 'fixed',
+  fixed_absence_amount: 100,
+  progressive_absence_amounts: [50, 100, 200, 400, 800],
+  enable_late_deduction: true,
+  late_threshold_hours: 3,
+  late_deduction_type: 'fraction',
+  late_deduction_fraction: 'quarter',
+  late_fixed_amount: 0,
+  payroll_frequency: 'monthly',
+  default_payroll_day: 28,
+  auto_generate_payslip: true,
+  allow_negative_salary: false,
+  overtime_enabled: true,
+  overtime_rate_multiplier: 1.5,
+  annual_tax_bulk_amount: 1000000,
+  annual_insurance_bulk_amount: 600000,
+  medical_insurance_enabled: true,
+  medical_deduction_type: 'fixed',
+  medical_fixed_monthly_amount: 300,
+  medical_percentage_rate: 2,
+  medical_apply_to: 'enabled_only',
+  loan_enabled: true,
+  loan_default_behavior: 'fixed_installment',
+  loan_auto_deduct: true,
 }
 
-function loadConfig() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      const merged = { ...defaultConfig }
-      for (const key of Object.keys(defaultConfig)) {
-        if (parsed[key]) merged[key] = { ...defaultConfig[key], ...parsed[key] }
-      }
-      return merged
-    }
-  } catch {}
-  return { ...defaultConfig }
+function mapDBToFrontend(db) {
+  if (!db) return defaultConfig
+  return {
+    working_hours_per_day: db.working_hours_per_day ?? 8,
+    working_days_per_month: db.working_days_per_month ?? 22,
+    grace_period_minutes: db.grace_period_minutes ?? 15,
+    standard_start_time: db.standard_start_time ?? '09:00',
+    standard_end_time: db.standard_end_time ?? '17:00',
+    weekend_days: db.weekend_days ?? ['Saturday', 'Sunday'],
+    absence_mode: db.absence_mode ?? 'fixed',
+    fixed_absence_amount: db.fixed_absence_amount ?? 100,
+    progressive_absence_amounts: db.progressive_absence_amounts ?? [50, 100, 200, 400, 800],
+    enable_late_deduction: db.enable_late_deduction ?? true,
+    late_threshold_hours: db.late_threshold_hours ?? 3,
+    late_deduction_type: db.late_deduction_type ?? 'fraction',
+    late_deduction_fraction: db.late_deduction_fraction ?? 'quarter',
+    late_fixed_amount: db.late_fixed_amount ?? 0,
+    payroll_frequency: db.payroll_frequency ?? 'monthly',
+    default_payroll_day: db.default_payroll_day ?? 28,
+    auto_generate_payslip: db.auto_generate_payslip ?? true,
+    allow_negative_salary: db.allow_negative_salary ?? false,
+    overtime_enabled: db.overtime_enabled ?? true,
+    overtime_rate_multiplier: db.overtime_rate_multiplier ?? 1.5,
+    annual_tax_bulk_amount: db.annual_tax_bulk_amount ?? 1000000,
+    annual_insurance_bulk_amount: db.annual_insurance_bulk_amount ?? 600000,
+    medical_insurance_enabled: db.medical_insurance_enabled ?? true,
+    medical_deduction_type: db.medical_deduction_type ?? 'fixed',
+    medical_fixed_monthly_amount: db.medical_fixed_monthly_amount ?? 300,
+    medical_percentage_rate: db.medical_percentage_rate ?? 2,
+    medical_apply_to: db.medical_apply_to ?? 'enabled_only',
+    loan_enabled: db.loan_enabled ?? true,
+    loan_default_behavior: db.loan_default_behavior ?? 'fixed_installment',
+    loan_auto_deduct: db.loan_auto_deduct ?? true,
+  }
 }
 
 export function SystemConfigProvider({ children }) {
-  const [config, setConfig] = useState(loadConfig)
+  const [config, setConfig] = useState(defaultConfig)
+  const [branches, setBranches] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [activeEmployeeCount, setActiveEmployeeCount] = useState(0)
   const [totalEmployeeCount, setTotalEmployeeCount] = useState(0)
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
-  }, [config])
-
-  const updateConfig = useCallback((section, data) => {
-    setConfig(prev => {
-      if (section === 'branches') return { ...prev, branches: data.branches || prev.branches }
-      return { ...prev, [section]: typeof data === 'object' && !Array.isArray(data) && section !== 'branches' ? { ...prev[section], ...data } : data }
-    })
+  const loadConfig = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [configRes, branchRes, allEmpRes, activeEmpRes] = await Promise.all([
+        api.get('/hr/system-config'),
+        api.get('/hr/branches'),
+        api.get('/hr/employees', { params: { page: 1, pageSize: 1 } }),
+        api.get('/hr/employees', { params: { page: 1, pageSize: 1, status: 'active' } }),
+      ])
+      const dbConfig = configRes.data?.data
+      if (dbConfig) setConfig(mapDBToFrontend(dbConfig))
+      setBranches(branchRes.data?.data || [])
+      setTotalEmployeeCount(allEmpRes.data?.data?.total || 0)
+      setActiveEmployeeCount(activeEmpRes.data?.data?.total || 0)
+    } catch (e) {
+      console.error('Failed to load system config:', e)
+    }
+    setLoading(false)
   }, [])
 
-  const resetConfig = useCallback(() => {
-    setConfig({ ...defaultConfig })
-    localStorage.removeItem(STORAGE_KEY)
+  useEffect(() => { loadConfig() }, [loadConfig])
+
+  const saveConfig = useCallback(async (section, data) => {
+    setSaving(true)
+    try {
+      const merged = { ...config, ...data }
+      await api.put('/hr/system-config', merged)
+      setConfig(merged)
+    } catch (e) {
+      console.error('Failed to save config:', e)
+      throw e
+    }
+    setSaving(false)
+  }, [config])
+
+  const saveBranch = useCallback(async (data) => {
+    try {
+      const res = await api.post('/hr/branches', data)
+      const newBranch = res.data?.data
+      if (newBranch) setBranches(prev => [...prev, newBranch])
+      return newBranch
+    } catch (e) {
+      console.error('Failed to create branch:', e)
+      throw e
+    }
+  }, [])
+
+  const editBranch = useCallback(async (id, data) => {
+    try {
+      await api.put(`/hr/branches/${id}`, data)
+      setBranches(prev => prev.map(b => b.id === id ? { ...b, ...data } : b))
+    } catch (e) {
+      console.error('Failed to update branch:', e)
+      throw e
+    }
+  }, [])
+
+  const removeBranch = useCallback(async (id) => {
+    try {
+      await api.delete(`/hr/branches/${id}`)
+      setBranches(prev => prev.filter(b => b.id !== id))
+    } catch (e) {
+      console.error('Failed to delete branch:', e)
+      throw e
+    }
   }, [])
 
   const refreshEmployeeCounts = useCallback(async () => {
     try {
-      const { default: api } = await import('../api/axios')
-      const allRes = await api.get('/hr/employees', { params: { page: 1, pageSize: 1 } })
-      const activeRes = await api.get('/hr/employees', { params: { page: 1, pageSize: 1, status: 'active' } })
+      const [allRes, activeRes] = await Promise.all([
+        api.get('/hr/employees', { params: { page: 1, pageSize: 1 } }),
+        api.get('/hr/employees', { params: { page: 1, pageSize: 1, status: 'active' } }),
+      ])
       setTotalEmployeeCount(allRes.data?.data?.total || 0)
       setActiveEmployeeCount(activeRes.data?.data?.total || 0)
     } catch {}
   }, [])
 
-  useEffect(() => {
-    refreshEmployeeCounts()
-  }, [refreshEmployeeCounts])
-
   return (
-    <SystemConfigContext.Provider value={{ config, updateConfig, resetConfig, activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts }}>
+    <SystemConfigContext.Provider value={{
+      config, branches, loading, saving,
+      saveConfig, saveBranch, editBranch, removeBranch,
+      activeEmployeeCount, totalEmployeeCount, refreshEmployeeCounts, loadConfig,
+    }}>
       {children}
     </SystemConfigContext.Provider>
   )
@@ -121,59 +176,53 @@ export function useSystemConfig() {
 }
 
 export function calcTaxPerEmployee(config, activeCount) {
-  const { annualTaxBulkAmount, frequency } = config.companyLevelDeductions
   if (!activeCount) return 0
-  const perYear = annualTaxBulkAmount / activeCount
-  return frequency === 'monthly' ? perYear / 12 : perYear / 52
+  const perYear = (config.annual_tax_bulk_amount || 0) / activeCount
+  return config.payroll_frequency === 'monthly' ? perYear / 12 : perYear / 52
 }
 
 export function calcInsurancePerEmployee(config, activeCount) {
-  const { annualInsuranceBulkAmount, frequency } = config.companyLevelDeductions
   if (!activeCount) return 0
-  const perYear = annualInsuranceBulkAmount / activeCount
-  return frequency === 'monthly' ? perYear / 12 : perYear / 52
+  const perYear = (config.annual_insurance_bulk_amount || 0) / activeCount
+  return config.payroll_frequency === 'monthly' ? perYear / 12 : perYear / 52
 }
 
 export function calcMedicalInsurance(config, employee) {
-  const rules = config.medicalInsuranceRules
-  if (!rules.enabled) return 0
-  if (rules.applyTo === 'enabled_only' && !employee.medicalInsuranceEnabled) return 0
-  if (rules.deductionType === 'fixed') return employee.customMedicalAmount || rules.fixedMonthlyAmount
-  return ((employee.baseSalary || 0) * rules.percentageRate) / 100
+  if (!config.medical_insurance_enabled) return 0
+  if (config.medical_apply_to === 'enabled_only' && !employee.medicalInsuranceEnabled) return 0
+  if (config.medical_deduction_type === 'fixed') return employee.customMedicalAmount || config.medical_fixed_monthly_amount || 0
+  return ((employee.baseSalary || 0) * (config.medical_percentage_rate || 0)) / 100
 }
 
 export function calcLoanDeduction(config, employee) {
-  const rules = config.loanRules
-  if (!rules.enabled || !rules.autoDeductFromPayroll) return 0
+  if (!config.loan_enabled || !config.loan_auto_deduct) return 0
   if (!employee.hasActiveLoan || employee.loanStatus !== 'active') return 0
-  if (rules.defaultBehavior === 'remaining_divided' && employee.remainingBalance > 0 && employee.remainingMonths > 0) {
+  if (config.loan_default_behavior === 'remaining_divided' && employee.remainingBalance > 0 && employee.remainingMonths > 0) {
     return Math.min(employee.monthlyInstallment || 0, employee.remainingBalance / employee.remainingMonths)
   }
   return employee.monthlyInstallment || 0
 }
 
 export function calcAbsenceDeduction(config, employee) {
-  const policy = config.attendancePolicy
   const days = employee.absenceDays || 0
   if (days <= 0) return 0
-  if (policy.absenceMode === 'fixed') return policy.fixedAbsenceAmount * days
+  if (config.absence_mode === 'fixed') return (config.fixed_absence_amount || 0) * days
+  const amounts = config.progressive_absence_amounts || [50, 100, 200, 400, 800]
   let total = 0
   for (let i = 0; i < days; i++) {
-    total += policy.progressiveAbsenceAmounts[Math.min(i, policy.progressiveAbsenceAmounts.length - 1)]
+    total += amounts[Math.min(i, amounts.length - 1)] || 0
   }
   return total
 }
 
 export function calcLateDeduction(config, employee) {
-  const policy = config.attendancePolicy
-  const rules = config.payrollRules
-  if (!policy.enableLateDeduction) return 0
+  if (!config.enable_late_deduction) return 0
   const occurrences = employee.lateOccurrences || 0
   if (occurrences <= 0) return 0
-  if (policy.lateDeductionType === 'fixed') return policy.lateFixedAmount * occurrences
-  const workingDays = rules.workingDaysPerMonth || 22
+  if (config.late_deduction_type === 'fixed') return (config.late_fixed_amount || 0) * occurrences
+  const workingDays = config.working_days_per_month || 22
   const dailySalary = (employee.baseSalary || 0) / workingDays
-  const fraction = policy.lateDeductionFraction === 'quarter' ? 0.25 : policy.lateDeductionFraction === 'half' ? 0.5 : 1
+  const fraction = config.late_deduction_fraction === 'quarter' ? 0.25 : config.late_deduction_fraction === 'half' ? 0.5 : 1
   return dailySalary * fraction * occurrences
 }
 
@@ -233,7 +282,7 @@ export function buildAutoDeductions(config, employee, month, activeCount) {
   if (ins > 0) results.push({ employee_name: name, employee_id: eid, deduction_type: 'Company Insurance', amount: ins, month, source: 'Company-Level Auto', reason: 'Auto from annual insurance bulk', status: 'active', isAuto: true })
 
   const med = calcMedicalInsurance(config, employee)
-  if (med > 0) results.push({ employee_name: name, employee_id: eid, deduction_type: 'Medical Insurance', amount: med, month, source: 'Employee Rule Auto', reason: `Medical ${config.medicalInsuranceRules.deductionType} deduction`, status: 'active', isAuto: true })
+  if (med > 0) results.push({ employee_name: name, employee_id: eid, deduction_type: 'Medical Insurance', amount: med, month, source: 'Employee Rule Auto', reason: `Medical ${config.medical_deduction_type} deduction`, status: 'active', isAuto: true })
 
   const loan = calcLoanDeduction(config, employee)
   if (loan > 0) results.push({ employee_name: name, employee_id: eid, deduction_type: 'Loan', amount: loan, month, source: 'Employee Rule Auto', reason: `Loan installment: ${employee.monthlyInstallment}`, status: 'active', isAuto: true })
