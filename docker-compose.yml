@@ -15,6 +15,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - hrm-net
 
   backend:
     build:
@@ -37,6 +39,14 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8120 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    networks:
+      - hrm-net
 
   frontend:
     build:
@@ -45,8 +55,15 @@ services:
     ports:
       - "3050:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - hrm-net
+
+networks:
+  hrm-net:
+    driver: bridge
 
 volumes:
   pgdata:
