@@ -5,17 +5,27 @@ import { useI18n } from '../../i18n'
 import StatsCard from '../../components/StatsCard'
 import AnimatedTable from '../../components/AnimatedTable'
 import Badge from '../../components/Badge'
-import { getHRDashboard, getLeaveRequests, getAttendance } from '../../api/hr'
+import useTeamData from '../../hooks/useTeamData'
+import { getLeaveRequests } from '../../api/hr'
 import {
-  Users, UserCheck, Clock, AlertCircle, CalendarOff,
+  Users, UserCheck, Clock, AlertCircle,
   Activity, Eye, CheckCircle, Network, ChevronRight,
 } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
-const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
-const fadeScale = { hidden: { opacity: 0, scale: 0.96 }, show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
+}
+const fadeScale = {
+  hidden: { opacity: 0, scale: 0.96 },
+  show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
+}
 
-const statusColors = { pending: 'amber', approved: 'emerald', rejected: 'rose', present: 'emerald', absent: 'rose', late: 'amber' }
+const statusColors = {
+  pending: 'amber', approved: 'emerald', rejected: 'rose',
+  present: 'emerald', absent: 'rose', late: 'amber',
+}
 
 const quickActionGradients = {
   indigo: 'from-indigo-500 to-indigo-600 shadow-indigo-200',
@@ -23,53 +33,50 @@ const quickActionGradients = {
   sky: 'from-sky-500 to-sky-600 shadow-sky-200',
   amber: 'from-amber-500 to-amber-600 shadow-amber-200',
   purple: 'from-purple-500 to-purple-600 shadow-purple-200',
-  rose: 'from-rose-500 to-rose-600 shadow-rose-200',
 }
 
 function SkeletonCard() {
   return (
     <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
-      <div className="animate-pulse space-y-3"><div className="h-3 w-20 rounded bg-gray-100 dark:bg-gray-700" /><div className="h-7 w-28 rounded bg-gray-100 dark:bg-gray-700" /></div>
+      <div className="animate-pulse space-y-3">
+        <div className="h-3 w-20 rounded bg-gray-100 dark:bg-gray-700" />
+        <div className="h-7 w-28 rounded bg-gray-100 dark:bg-gray-700" />
+      </div>
     </div>
   )
 }
 
 export default function ManagerDashboard() {
   const { t } = useI18n()
-  const [loading, setLoading] = useState(true)
-  const [apiData, setApiData] = useState(null)
-  const [leaves, setLeaves] = useState([])
   const navigate = useNavigate()
+  const {
+    team, loading,
+    presentCount, absentCount, notCheckedCount, onLeaveCount,
+  } = useTeamData()
+  const [leaves, setLeaves] = useState([])
 
   useEffect(() => {
-    setLoading(true)
-    Promise.all([
-      getHRDashboard().then(r => r.data?.data || {}).catch(() => ({})),
-      getLeaveRequests({ page: 1, pageSize: 5, status: 'pending' }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
-      getAttendance({ page: 1, pageSize: 10 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
-    ]).then(([dash, leaveData, attendanceData]) => {
-      setApiData(dash)
-      setLeaves(leaveData)
-    }).finally(() => setLoading(false))
+    getLeaveRequests({ page: 1, pageSize: 5, status: 'pending' })
+      .then(r => { const d = r.data?.data; setLeaves(d?.items || d || []) })
+      .catch(() => setLeaves([]))
   }, [])
 
-  const totalEmployees = apiData?.total_employees || 0
-  const activeEmployees = apiData?.active_employees || 0
-  const attendanceRate = apiData?.attendance_rate || 0
-  const pendingLeaves = apiData?.pending_leaves || leaves.length
+  const attendanceRate = team.length > 0
+    ? Math.round((presentCount / team.length) * 100)
+    : 0
 
   const kpis = [
-    { title: 'Team Members', value: totalEmployees || '-', icon: Users, color: 'indigo' },
-    { title: 'Team Present', value: activeEmployees || '-', icon: UserCheck, color: 'emerald' },
+    { title: 'Team Members', value: team.length || '-', icon: Users, color: 'indigo' },
+    { title: 'Team Present', value: presentCount || '-', icon: UserCheck, color: 'emerald' },
     { title: 'Attendance Rate', value: attendanceRate ? attendanceRate + '%' : '-', icon: Activity, color: 'sky' },
-    { title: 'Pending Requests', value: pendingLeaves || '-', icon: Clock, color: 'amber' },
+    { title: 'On Leave', value: onLeaveCount || '-', icon: Clock, color: 'amber' },
   ]
 
   const quickActions = [
     { label: 'Team Attendance', desc: 'View today', icon: Activity, color: 'indigo', path: '/attendance' },
     { label: 'Team Requests', desc: 'Review', icon: Eye, color: 'emerald', path: '/requests' },
     { label: 'Leave Requests', desc: 'Approve', icon: CheckCircle, color: 'sky', path: '/leave' },
-    { label: 'Team Members', desc: 'View all', icon: Users, color: 'amber', path: '/employees' },
+    { label: 'Team Members', desc: 'View all', icon: Users, color: 'amber', path: '/team-members' },
     { label: 'Org Chart', desc: 'Structure', icon: Network, color: 'purple', path: '/org-chart' },
   ]
 

@@ -1,12 +1,17 @@
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useI18n } from '../../i18n'
+import { useAuth } from '../../hooks/useAuth'
 import Badge from '../../components/Badge'
+import useTeamData from '../../hooks/useTeamData'
 import { getOrgChart, getEmployees } from '../../api/hr'
 import { ChevronDown } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
-const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
+}
 
 const deptColors = ['#6366f1', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#ef4444', '#14b8a6']
 
@@ -48,7 +53,7 @@ function DepartmentNode({ dept, allEmployees, index, level = 0 }) {
                   <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{emp.first_name} {emp.last_name}</p>
                   <p className="text-[10px] text-gray-400 dark:text-gray-500">{emp.position}</p>
                 </div>
-                <Badge color={emp.status === 'active' ? 'emerald' : emp.status === 'on_leave' ? 'amber' : 'gray'}>{emp.status}</Badge>
+                <Badge color={emp.employment_status === 'active' ? 'emerald' : emp.employment_status === 'on_leave' ? 'amber' : 'gray'}>{emp.employment_status || emp.status}</Badge>
               </motion.div>
             ))}
             {deptEmployees.length > 6 && (
@@ -64,13 +69,55 @@ function DepartmentNode({ dept, allEmployees, index, level = 0 }) {
   )
 }
 
+function ManagerOrgChart() {
+  const { team, loading } = useTeamData()
+  const { t } = useI18n()
+
+  if (loading) {
+    return <div className="animate-pulse rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6 h-64" />
+  }
+
+  return (
+    <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6">
+      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-xl font-bold text-white shadow-lg shadow-indigo-500/25">
+          TM
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">My Team</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{team.length} {t('employees')}</p>
+        </div>
+      </div>
+
+      {team.length === 0 ? (
+        <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-12">No team members found</p>
+      ) : (
+        <div className="space-y-2">
+          {team.map((emp, i) => (
+            <motion.div key={emp.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }} className="flex items-center gap-3 rounded-lg border border-gray-50 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-400">{(emp.first_name || '')[0]}{(emp.last_name || '')[0]}</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{emp.first_name} {emp.last_name}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{emp.position} {emp.department ? `· ${emp.department}` : ''}</p>
+              </div>
+              <Badge color={emp.employment_status === 'active' ? 'emerald' : 'gray'}>{emp.employment_status || emp.status}</Badge>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function OrgChart() {
   const { t } = useI18n()
+  const { hasRole } = useAuth()
   const [loading, setLoading] = useState(true)
   const [depts, setDepts] = useState([])
   const [allEmployees, setAllEmployees] = useState([])
 
   useEffect(() => {
+    if (hasRole('manager')) return
     Promise.all([
       getOrgChart().then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
       getEmployees({ page: 1, pageSize: 200 }).then(r => { const d = r.data?.data; return d?.items || d || [] }).catch(() => []),
@@ -79,6 +126,18 @@ export default function OrgChart() {
       setAllEmployees(employees)
     }).finally(() => setLoading(false))
   }, [])
+
+  if (hasRole('manager')) {
+    return (
+      <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+        <motion.div variants={fadeUp}>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('orgChart')}</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('orgChartDesc')}</p>
+        </motion.div>
+        <ManagerOrgChart />
+      </motion.div>
+    )
+  }
 
   if (loading) {
     return (

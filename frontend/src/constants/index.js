@@ -13,7 +13,8 @@ export const ADMIN_NAV = [
 
 export const MANAGER_NAV = [
   { path: '/', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { path: '/attendance', label: 'Attendance', icon: 'Activity' },
+  { path: '/team-members', label: 'Team Members', icon: 'Users' },
+  { path: '/attendance', label: 'Team Attendance', icon: 'Activity' },
   { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff' },
   { path: '/requests', label: 'Requests', icon: 'ClipboardList' },
   { path: '/org-chart', label: 'Org Chart', icon: 'Network' },
@@ -25,7 +26,6 @@ export const EMPLOYEE_NAV = [
   { path: '/requests', label: 'My Requests', icon: 'ClipboardList' },
   { path: '/payslip', label: 'My Payslip', icon: 'DollarSign' },
   { path: '/documents', label: 'My Documents', icon: 'Folder' },
-  { path: '/org-chart', label: 'Org Chart', icon: 'Network' },
 ]
 
 export const ROLE_LABELS = {

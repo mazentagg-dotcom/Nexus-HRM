@@ -18,6 +18,7 @@ const OrgChart = lazy(() => import('../pages/org-chart/OrgChart'))
 const SystemConfiguration = lazy(() => import('../pages/system-configuration/SystemConfiguration'))
 const AccessDenied = lazy(() => import('../pages/AccessDenied'))
 const NotFound = lazy(() => import('../pages/NotFound'))
+const TeamMembers = lazy(() => import('../pages/team-members/TeamMembers'))
 
 const MyAttendance = lazy(() => import('../pages/self-service/MyAttendance'))
 const MyRequests = lazy(() => import('../pages/self-service/MyRequests'))
@@ -97,6 +98,18 @@ function SystemConfigPage() {
   return <SystemConfiguration />
 }
 
+function TeamMembersPage() {
+  const { hasRole, isAdmin } = useAuth()
+  if (isAdmin || hasRole('manager')) return <TeamMembers />
+  return <AccessDenied />
+}
+
+function OrgChartPage() {
+  const { hasRole } = useAuth()
+  if (hasRole('employee')) return <AccessDenied />
+  return <OrgChart />
+}
+
 const router = createBrowserRouter([
   {
     path: '/login',
@@ -122,7 +135,8 @@ const router = createBrowserRouter([
           { path: 'onboarding', element: <SuspensePage><OnboardingPage /></SuspensePage> },
           { path: 'system-configuration', element: <SuspensePage><SystemConfigPage /></SuspensePage> },
           { path: 'settings', element: <Navigate to="/" replace /> },
-          { path: 'org-chart', element: <SuspensePage><OrgChart /></SuspensePage> },
+          { path: 'org-chart', element: <SuspensePage><OrgChartPage /></SuspensePage> },
+          { path: 'team-members', element: <SuspensePage><TeamMembersPage /></SuspensePage> },
           { path: 'upload', element: <Navigate to="/" replace /> },
           { path: 'performance', element: <Navigate to="/" replace /> },
         ],
