@@ -13,10 +13,9 @@ export const ADMIN_NAV = [
 
 export const MANAGER_NAV = [
   { path: '/', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { path: '/team-members', label: 'Team Members', icon: 'Users' },
-  { path: '/attendance', label: 'Team Attendance', icon: 'Activity' },
-  { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff' },
-  { path: '/requests', label: 'Requests', icon: 'ClipboardList' },
+  { path: '/team', label: 'Team', icon: 'Users' },
+  { path: '/team-requests', label: 'Team Requests', icon: 'ClipboardList' },
+  { path: '/approvals', label: 'Approvals', icon: 'ClipboardCheck' },
   { path: '/org-chart', label: 'Org Chart', icon: 'Network' },
 ]
 

@@ -18,7 +18,8 @@ const OrgChart = lazy(() => import('../pages/org-chart/OrgChart'))
 const SystemConfiguration = lazy(() => import('../pages/system-configuration/SystemConfiguration'))
 const AccessDenied = lazy(() => import('../pages/AccessDenied'))
 const NotFound = lazy(() => import('../pages/NotFound'))
-const TeamMembers = lazy(() => import('../pages/team-members/TeamMembers'))
+const TeamPage = lazy(() => import('../pages/team-members/TeamPage'))
+const TeamRequestsPage = lazy(() => import('../pages/team-requests/TeamRequestsPage'))
 
 const MyAttendance = lazy(() => import('../pages/self-service/MyAttendance'))
 const MyRequests = lazy(() => import('../pages/self-service/MyRequests'))
@@ -49,21 +50,27 @@ function LoginRoute() {
 }
 
 function AttendancePage() {
-  const { hasRole } = useAuth()
+  const { hasRole, isAdmin } = useAuth()
   if (hasRole('employee')) return <MyAttendance />
-  return <Attendance />
+  if (hasRole('manager')) return <TeamPage />
+  if (isAdmin) return <Attendance />
+  return <AccessDenied />
 }
 
 function LeavePage() {
-  const { hasRole } = useAuth()
+  const { hasRole, isAdmin } = useAuth()
   if (hasRole('employee')) return <MyRequests />
-  return <LeaveRequests />
+  if (hasRole('manager')) return <TeamRequestsPage />
+  if (isAdmin) return <LeaveRequests />
+  return <AccessDenied />
 }
 
 function RequestsPage() {
-  const { hasRole } = useAuth()
+  const { hasRole, isAdmin } = useAuth()
   if (hasRole('employee')) return <MyRequests />
-  return <Requests />
+  if (hasRole('manager')) return <TeamRequestsPage />
+  if (isAdmin) return <Requests />
+  return <AccessDenied />
 }
 
 function PayslipPage() {
@@ -98,9 +105,22 @@ function SystemConfigPage() {
   return <SystemConfiguration />
 }
 
-function TeamMembersPage() {
+function TeamPageGuard() {
   const { hasRole, isAdmin } = useAuth()
-  if (isAdmin || hasRole('manager')) return <TeamMembers />
+  if (isAdmin || hasRole('manager')) return <TeamPage />
+  return <AccessDenied />
+}
+
+function TeamRequestsPageGuard() {
+  const { hasRole, isAdmin } = useAuth()
+  if (isAdmin || hasRole('manager')) return <TeamRequestsPage />
+  return <AccessDenied />
+}
+
+function ApprovalsPage() {
+  const { hasRole, isAdmin } = useAuth()
+  if (hasRole('manager')) return <TeamRequestsPage />
+  if (isAdmin) return <Requests />
   return <AccessDenied />
 }
 
@@ -136,7 +156,10 @@ const router = createBrowserRouter([
           { path: 'system-configuration', element: <SuspensePage><SystemConfigPage /></SuspensePage> },
           { path: 'settings', element: <Navigate to="/" replace /> },
           { path: 'org-chart', element: <SuspensePage><OrgChartPage /></SuspensePage> },
-          { path: 'team-members', element: <SuspensePage><TeamMembersPage /></SuspensePage> },
+          { path: 'team', element: <SuspensePage><TeamPageGuard /></SuspensePage> },
+          { path: 'team-members', element: <Navigate to="/team" replace /> },
+          { path: 'team-requests', element: <SuspensePage><TeamRequestsPageGuard /></SuspensePage> },
+          { path: 'approvals', element: <SuspensePage><ApprovalsPage /></SuspensePage> },
           { path: 'upload', element: <Navigate to="/" replace /> },
           { path: 'performance', element: <Navigate to="/" replace /> },
         ],

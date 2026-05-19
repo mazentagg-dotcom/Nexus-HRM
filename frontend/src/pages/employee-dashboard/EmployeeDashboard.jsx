@@ -6,20 +6,31 @@ import StatsCard from '../../components/StatsCard'
 import AnimatedTable from '../../components/AnimatedTable'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
+import Modal from '../../components/ui/Modal'
+import Select from '../../components/ui/Select'
+import Textarea from '../../components/ui/Textarea'
+import Input from '../../components/ui/Input'
 import { useToast } from '../../components/feedback/Toast'
+import { createRequest } from '../../api/hr'
 import {
   getMyEmployee, getMyLeaveBalance, getMyLeaveRequests,
-  getMyAttendance, getMyPayroll, getMyLoans, checkIn, checkOut,
+  getMyAttendance, getMyPayroll, getMyLoans,
 } from '../../api/hr'
 import {
   UserCheck, CalendarDays, Thermometer, Landmark, FileText,
   Activity, Clock, Calendar, DollarSign, ClipboardCheck, User,
-  ChevronRight, AlertCircle, ArrowRight,
+  ChevronRight, AlertCircle, Send, X,
 } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
-const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
-const fadeScale = { hidden: { opacity: 0, scale: 0.96 }, show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } } }
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
+}
+const fadeScale = {
+  hidden: { opacity: 0, scale: 0.96 },
+  show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
+}
 
 const iconMap = { UserCheck, CalendarDays, Thermometer, Landmark, FileText, Activity }
 
@@ -29,8 +40,6 @@ const statusColors = {
   pending: 'amber', rejected: 'rose', cancelled: 'gray', withdrawn: 'gray',
   active: 'emerald', paid: 'emerald', draft: 'gray', processing: 'sky',
 }
-
-const leaveTypeColors = { annual: 'blue', sick: 'emerald', personal: 'purple', maternity: 'pink', unpaid: 'gray' }
 
 const quickActionGradients = {
   indigo: 'from-indigo-500 to-indigo-600 shadow-indigo-200',
@@ -84,6 +93,14 @@ function fmtMoney(n) {
   return '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const contactHrCategories = [
+  { value: 'payroll', label: 'Payroll' },
+  { value: 'attendance', label: 'Attendance' },
+  { value: 'leave', label: 'Leave' },
+  { value: 'documents', label: 'Documents' },
+  { value: 'other', label: 'Other' },
+]
+
 export default function EmployeeDashboard() {
   const { t } = useI18n()
   const [loading, setLoading] = useState(true)
@@ -93,10 +110,11 @@ export default function EmployeeDashboard() {
   const [attendance, setAttendance] = useState([])
   const [payroll, setPayroll] = useState([])
   const [loans, setLoans] = useState([])
-  const [checkingIn, setCheckingIn] = useState(false)
-  const [checkingOut, setCheckingOut] = useState(false)
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const [showContactHr, setShowContactHr] = useState(false)
+  const [contactForm, setContactForm] = useState({ category: '', subject: '', message: '' })
+  const [contacting, setContacting] = useState(false)
 
   useEffect(() => {
     Promise.allSettled([
@@ -140,32 +158,6 @@ export default function EmployeeDashboard() {
   const totalPresent = attendance.filter(a => a.status === 'present' || a.status === 'late').length
   const attendanceRate = attendance.length > 0 ? Math.round((totalPresent / attendance.length) * 100) : 0
 
-  const handleCheckIn = async () => {
-    setCheckingIn(true)
-    try {
-      await checkIn()
-      showToast(t('checkedInSuccessfully'), 'success')
-      const res = await getMyAttendance({ page: 1, pageSize: 10 })
-      const d = res.data?.data
-      setAttendance(d?.items || d || [])
-    } catch (e) {
-      showToast(e.response?.data?.message || t('failedToCheckIn'), 'error')
-    } finally { setCheckingIn(false) }
-  }
-
-  const handleCheckOut = async () => {
-    setCheckingOut(true)
-    try {
-      await checkOut()
-      showToast(t('checkedOutSuccessfully'), 'success')
-      const res = await getMyAttendance({ page: 1, pageSize: 10 })
-      const d = res.data?.data
-      setAttendance(d?.items || d || [])
-    } catch (e) {
-      showToast(e.response?.data?.message || t('failedToCheckOut'), 'error')
-    } finally { setCheckingOut(false) }
-  }
-
   const kpiConfig = [
     {
       id: 'attendance_status', title: t('todaysStatus'), icon: 'UserCheck', color: 'emerald',
@@ -180,22 +172,31 @@ export default function EmployeeDashboard() {
     { id: 'attendance_rate', title: t('attendanceRate'), icon: 'Activity', color: 'rose', value: attendanceRate || '-', suffix: attendanceRate ? '%' : '' },
   ]
 
-  const quickActions = [
-    { label: t('applyForLeave'), desc: t('submitRequest'), icon: Calendar, color: 'indigo', path: '/self-service', tab: 'leave' },
-    { label: t('applySickLeave'), desc: t('medicalLeave'), icon: Thermometer, color: 'sky', path: '/self-service', tab: 'leave' },
-    { label: t('requestLoan'), desc: t('applyForLoanDesc'), icon: Landmark, color: 'emerald', path: '/self-service', tab: 'loans' },
-    { label: t('viewPayslips'), desc: t('payHistory'), icon: DollarSign, color: 'amber', path: '/self-service', tab: 'payslips' },
-    { label: t('updateProfile'), desc: t('editInfo'), icon: User, color: 'purple', path: '/self-service', tab: 'profile' },
-    { label: t('contactHr'), desc: t('getHelp'), icon: ClipboardCheck, color: 'rose', path: '/self-service' },
-  ]
-
-  const handleQuickAction = (action) => {
-    if (action.tab) {
-      navigate(action.path, { state: { tab: action.tab } })
-    } else {
-      navigate(action.path)
-    }
+  const handleContactHr = async () => {
+    if (!contactForm.subject || !contactForm.message) { showToast('Please fill all fields', 'error'); return }
+    setContacting(true)
+    try {
+      await createRequest({
+        request_type: contactForm.category || 'other',
+        title: `[Contact HR] ${contactForm.subject}`,
+        description: `Category: ${contactForm.category}\n${contactForm.message}`,
+        priority: 'medium',
+      })
+      showToast('Message sent to HR', 'success')
+      setShowContactHr(false)
+      setContactForm({ category: '', subject: '', message: '' })
+    } catch (e) { showToast(e.response?.data?.message || 'Error', 'error') }
+    setContacting(false)
   }
+
+  const quickActions = [
+    { label: t('applyForLeave'), desc: t('submitRequest'), icon: Calendar, color: 'indigo', action: () => navigate('/requests') },
+    { label: t('applySickLeave'), desc: t('medicalLeave'), icon: Thermometer, color: 'sky', action: () => navigate('/requests') },
+    { label: t('requestLoan'), desc: t('applyForLoanDesc'), icon: Landmark, color: 'emerald', action: () => navigate('/requests') },
+    { label: t('viewPayslips'), desc: t('payHistory'), icon: DollarSign, color: 'amber', action: () => navigate('/payslip') },
+    { label: t('updateProfile'), desc: t('editInfo'), icon: User, color: 'purple', action: () => showToast('Profile update coming soon', 'info') },
+    { label: t('contactHr'), desc: t('getHelp'), icon: ClipboardCheck, color: 'rose', action: () => setShowContactHr(true) },
+  ]
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -207,15 +208,6 @@ export default function EmployeeDashboard() {
               ? `${t('welcomeBackName')} ${employee.first_name}! ${t('heresYourPersonalOverview')}`
               : t('loadingDashboard')}
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {!attSummary.checkIn ? (
-            <Button size="sm" icon={Clock} loading={checkingIn} onClick={handleCheckIn} variant="primary">{t('checkIn')}</Button>
-          ) : !attSummary.checkOut ? (
-            <Button size="sm" icon={Clock} loading={checkingOut} onClick={handleCheckOut} variant="secondary">{t('checkOut')}</Button>
-          ) : (
-            <Badge color="emerald">{t('checkedOutForToday')}</Badge>
-          )}
         </div>
       </motion.div>
 
@@ -247,7 +239,7 @@ export default function EmployeeDashboard() {
           <SectionCard
             title={t('myAttendance')}
             icon={Activity}
-            action={() => navigate('/self-service', { state: { tab: 'attendance' } })}
+            action={() => navigate('/attendance')}
             actionLabel={t('viewAll')}
           >
             {loading ? (
@@ -291,7 +283,7 @@ export default function EmployeeDashboard() {
           <SectionCard
             title={t('sickLeaveBalance')}
             icon={Thermometer}
-            action={() => navigate('/self-service', { state: { tab: 'leave' } })}
+            action={() => navigate('/requests')}
             actionLabel={t('viewAll')}
           >
             {loading ? (
@@ -353,7 +345,7 @@ export default function EmployeeDashboard() {
                     transition={{ delay: i * 0.05 }}
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => handleQuickAction(action)}
+                    onClick={action.action}
                     className="flex flex-col items-center gap-2.5 rounded-xl p-4 text-center transition-shadow hover:shadow-lg"
                   >
                     <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} shadow-md`}>
@@ -372,7 +364,7 @@ export default function EmployeeDashboard() {
           <SectionCard
             title={t('myLoans')}
             icon={Landmark}
-            action={() => navigate('/self-service', { state: { tab: 'loans' } })}
+            action={() => navigate('/requests')}
             actionLabel={t('viewAll')}
           >
             {loading ? (
@@ -414,7 +406,7 @@ export default function EmployeeDashboard() {
       <SectionCard
         title={t('payslips')}
         icon={FileText}
-        action={() => navigate('/self-service', { state: { tab: 'payslips' } })}
+        action={() => navigate('/payslip')}
         actionLabel={t('viewAll')}
       >
         {loading ? (
@@ -431,18 +423,8 @@ export default function EmployeeDashboard() {
                 key: 'status', label: t('action'),
                 render: (_, row) => (
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => showToast(t('payslipViewerComingSoon'), 'info')}
-                      className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                    >
-                      {t('view')}
-                    </button>
-                    <button
-                      onClick={() => showToast(t('downloadComingSoon'), 'info')}
-                      className="rounded px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      {t('download')}
-                    </button>
+                    <button onClick={() => showToast(t('payslipViewerComingSoon'), 'info')} className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">{t('view')}</button>
+                    <button onClick={() => showToast(t('downloadComingSoon'), 'info')} className="rounded px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">{t('download')}</button>
                   </div>
                 ),
               },
@@ -453,6 +435,16 @@ export default function EmployeeDashboard() {
           />
         )}
       </SectionCard>
+
+      <Modal isOpen={showContactHr} onClose={() => { setShowContactHr(false); setContactForm({ category: '', subject: '', message: '' }) }} title="Contact HR" size="md" footer={
+        <><Button variant="secondary" onClick={() => { setShowContactHr(false); setContactForm({ category: '', subject: '', message: '' }) }}>{t('cancel')}</Button><Button loading={contacting} icon={Send} onClick={handleContactHr}>{t('submit')}</Button></>
+      }>
+        <div className="space-y-4">
+          <Select label="Category" options={contactHrCategories} value={contactForm.category} onChange={v => setContactForm(p => ({ ...p, category: v }))} />
+          <Input label="Subject" value={contactForm.subject} onChange={e => setContactForm(p => ({ ...p, subject: e.target.value }))} placeholder="Brief subject..." />
+          <Textarea label="Message" value={contactForm.message} onChange={e => setContactForm(p => ({ ...p, message: e.target.value }))} placeholder="Describe your question or issue..." rows={4} />
+        </div>
+      </Modal>
     </motion.div>
   )
 }

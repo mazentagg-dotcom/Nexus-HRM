@@ -6,9 +6,9 @@ import StatsCard from '../../components/StatsCard'
 import AnimatedTable from '../../components/AnimatedTable'
 import Badge from '../../components/Badge'
 import useTeamData from '../../hooks/useTeamData'
-import { getLeaveRequests } from '../../api/hr'
+import { getLeaveRequests, getRequests } from '../../api/hr'
 import {
-  Users, UserCheck, Clock, AlertCircle,
+  Users, UserCheck, Clock,
   Activity, Eye, CheckCircle, Network, ChevronRight,
 } from 'lucide-react'
 
@@ -51,14 +51,28 @@ export default function ManagerDashboard() {
   const navigate = useNavigate()
   const {
     team, loading,
-    presentCount, absentCount, notCheckedCount, onLeaveCount,
+    presentCount, onLeaveCount,
   } = useTeamData()
-  const [leaves, setLeaves] = useState([])
+  const [pendingItems, setPendingItems] = useState([])
 
   useEffect(() => {
-    getLeaveRequests({ page: 1, pageSize: 5, status: 'pending' })
-      .then(r => { const d = r.data?.data; setLeaves(d?.items || d || []) })
-      .catch(() => setLeaves([]))
+    Promise.allSettled([
+      getLeaveRequests({ page: 1, pageSize: 5, status: 'pending' }),
+      getRequests({ page: 1, pageSize: 100, status: 'pending' }),
+    ]).then(([lvRes, reqRes]) => {
+      const items = []
+      if (lvRes.status === 'fulfilled') {
+        const d = lvRes.value.data?.data
+        const leaves = d?.items || d || []
+        leaves.forEach(l => items.push({ id: l.id, name: l.employee_name, type: l.leave_type, days: l.duration_days, status: l.status }))
+      }
+      if (reqRes.status === 'fulfilled') {
+        const d = reqRes.value.data?.data
+        const reqs = d?.items || d || []
+        reqs.forEach(r => items.push({ id: r.id, name: r.employee_name, type: r.request_type, days: null, status: r.status }))
+      }
+      setPendingItems(items.slice(0, 5))
+    })
   }, [])
 
   const attendanceRate = team.length > 0
@@ -67,16 +81,15 @@ export default function ManagerDashboard() {
 
   const kpis = [
     { title: 'Team Members', value: team.length || '-', icon: Users, color: 'indigo' },
-    { title: 'Team Present', value: presentCount || '-', icon: UserCheck, color: 'emerald' },
+    { title: 'Present Today', value: presentCount || '-', icon: UserCheck, color: 'emerald' },
     { title: 'Attendance Rate', value: attendanceRate ? attendanceRate + '%' : '-', icon: Activity, color: 'sky' },
     { title: 'On Leave', value: onLeaveCount || '-', icon: Clock, color: 'amber' },
   ]
 
   const quickActions = [
-    { label: 'Team Attendance', desc: 'View today', icon: Activity, color: 'indigo', path: '/attendance' },
-    { label: 'Team Requests', desc: 'Review', icon: Eye, color: 'emerald', path: '/requests' },
-    { label: 'Leave Requests', desc: 'Approve', icon: CheckCircle, color: 'sky', path: '/leave' },
-    { label: 'Team Members', desc: 'View all', icon: Users, color: 'amber', path: '/team-members' },
+    { label: 'Team', desc: 'Members & attendance', icon: Users, color: 'indigo', path: '/team' },
+    { label: 'Team Requests', desc: 'Review', icon: Eye, color: 'emerald', path: '/team-requests' },
+    { label: 'Approvals', desc: 'Pending items', icon: CheckCircle, color: 'sky', path: '/approvals' },
     { label: 'Org Chart', desc: 'Structure', icon: Network, color: 'purple', path: '/org-chart' },
   ]
 
@@ -106,19 +119,19 @@ export default function ManagerDashboard() {
           <div className="lg:col-span-2 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-6 pt-5 pb-3">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pending Team Requests</h3>
-              <button onClick={() => navigate('/requests')} className="flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors">
+              <button onClick={() => navigate('/team-requests')} className="flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors">
                 {t('viewAll')} <ChevronRight className="h-3 w-3" />
               </button>
             </div>
-            {leaves.length > 0 ? (
+            {pendingItems.length > 0 ? (
               <AnimatedTable
                 columns={[
-                  { key: 'employee_name', label: 'Employee', render: v => <span className="font-medium text-gray-900 dark:text-gray-100">{v}</span> },
-                  { key: 'leave_type', label: 'Type', render: v => <Badge color={statusColors[v] || 'gray'}>{v}</Badge> },
-                  { key: 'duration_days', label: 'Days', render: v => <span className="font-medium">{v}</span> },
+                  { key: 'name', label: 'Employee', render: v => <span className="font-medium text-gray-900 dark:text-gray-100">{v}</span> },
+                  { key: 'type', label: 'Type', render: v => <Badge color={statusColors[v] || 'gray'}>{v?.replace?.(/_/g, ' ')}</Badge> },
+                  { key: 'days', label: 'Days', render: v => <span className="font-medium">{v || '--'}</span> },
                   { key: 'status', label: 'Status', render: v => <Badge color={statusColors[v] || 'gray'}>{v}</Badge> },
                 ]}
-                data={leaves}
+                data={pendingItems}
                 pageSize={5}
               />
             ) : (
