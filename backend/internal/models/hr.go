@@ -178,6 +178,7 @@ type PayrollRecord struct {
 	HealthInsurance    float64   `json:"health_insurance"`
 	RetirementFund     float64   `json:"retirement_fund"`
 	LoanDeduction      float64   `json:"loan_deduction"`
+	TaxPenalty         float64   `json:"tax_penalty"`
 	OtherDeductions    float64   `json:"other_deductions"`
 	TotalDeductions    float64   `json:"total_deductions"`
 	NetPay             float64   `json:"net_pay"`

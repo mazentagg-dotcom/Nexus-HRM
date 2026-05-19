@@ -101,6 +101,9 @@ type SystemConfig struct {
 	LoanEnabled               bool            `json:"loan_enabled"`
 	LoanDefaultBehavior       string          `json:"loan_default_behavior"`
 	LoanAutoDeduct            bool            `json:"loan_auto_deduct"`
+	AnnualLeaveBalance        float64         `json:"annual_leave_balance"`
+	SickLeaveBalance          float64         `json:"sick_leave_balance"`
+	PersonalLeaveBalance      float64         `json:"personal_leave_balance"`
 	UpdatedBy                 *string         `json:"updated_by,omitempty"`
 	CreatedAt                 time.Time       `json:"created_at"`
 	UpdatedAt                 time.Time       `json:"updated_at"`
@@ -137,4 +140,7 @@ type UpdateSystemConfigRequest struct {
 	LoanEnabled               *bool            `json:"loan_enabled"`
 	LoanDefaultBehavior       *string          `json:"loan_default_behavior"`
 	LoanAutoDeduct            *bool            `json:"loan_auto_deduct"`
+	AnnualLeaveBalance        *float64         `json:"annual_leave_balance"`
+	SickLeaveBalance          *float64         `json:"sick_leave_balance"`
+	PersonalLeaveBalance      *float64         `json:"personal_leave_balance"`
 }

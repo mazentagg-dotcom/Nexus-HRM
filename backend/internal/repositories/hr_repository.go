@@ -819,7 +819,7 @@ func (r *PayrollRepository) FindAll(employeeID, status string, page, pageSize in
 		pr.housing_allowance, pr.transport_allowance, pr.medical_allowance, pr.food_allowance,
 		pr.bonus, pr.commission, pr.overtime_pay, pr.other_earnings,
 		pr.gross_pay, pr.tax_deduction, pr.social_security, pr.health_insurance, pr.retirement_fund,
-		pr.loan_deduction, pr.other_deductions, pr.total_deductions, pr.net_pay,
+		pr.loan_deduction, pr.tax_penalty, pr.other_deductions, pr.total_deductions, pr.net_pay,
 		pr.pay_date, pr.payment_method, pr.status, pr.notes, pr.created_at, pr.updated_at
 		FROM payroll_records pr LEFT JOIN employees e ON pr.employee_id = e.id`
 
@@ -864,7 +864,7 @@ func (r *PayrollRepository) FindAll(employeeID, status string, page, pageSize in
 			&pr.BasicSalary, &pr.HousingAllowance, &pr.TransportAllowance, &pr.MedicalAllowance, &pr.FoodAllowance,
 			&pr.Bonus, &pr.Commission, &pr.OvertimePay, &pr.OtherEarnings,
 			&pr.GrossPay, &pr.TaxDeduction, &pr.SocialSecurity, &pr.HealthInsurance, &pr.RetirementFund,
-			&pr.LoanDeduction, &pr.OtherDeductions, &pr.TotalDeductions, &pr.NetPay,
+			&pr.LoanDeduction, &pr.TaxPenalty, &pr.OtherDeductions, &pr.TotalDeductions, &pr.NetPay,
 			&payDate, &payMethod, &pr.Status, &notes, &pr.CreatedAt, &pr.UpdatedAt); err != nil {
 			return nil, 0, err
 		}
@@ -888,7 +888,7 @@ func (r *PayrollRepository) FindByID(id string) (*models.PayrollRecord, error) {
 		pr.housing_allowance, pr.transport_allowance, pr.medical_allowance, pr.food_allowance,
 		pr.bonus, pr.commission, pr.overtime_pay, pr.other_earnings,
 		pr.gross_pay, pr.tax_deduction, pr.social_security, pr.health_insurance, pr.retirement_fund,
-		pr.loan_deduction, pr.other_deductions, pr.total_deductions, pr.net_pay,
+		pr.loan_deduction, pr.tax_penalty, pr.other_deductions, pr.total_deductions, pr.net_pay,
 		pr.pay_date, pr.payment_method, pr.status, pr.notes, pr.created_at, pr.updated_at
 		FROM payroll_records pr LEFT JOIN employees e ON pr.employee_id = e.id WHERE pr.id = $1`
 
@@ -896,7 +896,7 @@ func (r *PayrollRepository) FindByID(id string) (*models.PayrollRecord, error) {
 		&pr.BasicSalary, &pr.HousingAllowance, &pr.TransportAllowance, &pr.MedicalAllowance, &pr.FoodAllowance,
 		&pr.Bonus, &pr.Commission, &pr.OvertimePay, &pr.OtherEarnings,
 		&pr.GrossPay, &pr.TaxDeduction, &pr.SocialSecurity, &pr.HealthInsurance, &pr.RetirementFund,
-		&pr.LoanDeduction, &pr.OtherDeductions, &pr.TotalDeductions, &pr.NetPay,
+		&pr.LoanDeduction, &pr.TaxPenalty, &pr.OtherDeductions, &pr.TotalDeductions, &pr.NetPay,
 		&payDate, &payMethod, &pr.Status, &notes, &pr.CreatedAt, &pr.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil

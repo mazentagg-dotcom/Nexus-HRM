@@ -26,6 +26,7 @@ func (r *SystemConfigRepository) Get() (*models.SystemConfig, error) {
 		annual_tax_bulk_amount, annual_insurance_bulk_amount,
 		medical_insurance_enabled, medical_deduction_type, medical_fixed_monthly_amount, medical_percentage_rate, medical_apply_to,
 		loan_enabled, loan_default_behavior, loan_auto_deduct,
+		annual_leave_balance, sick_leave_balance, personal_leave_balance,
 		updated_by, created_at, updated_at
 		FROM system_config WHERE id = 1`
 	var cfg models.SystemConfig
@@ -41,6 +42,7 @@ func (r *SystemConfigRepository) Get() (*models.SystemConfig, error) {
 		&cfg.AnnualTaxBulkAmount, &cfg.AnnualInsuranceBulkAmount,
 		&cfg.MedicalInsuranceEnabled, &cfg.MedicalDeductionType, &cfg.MedicalFixedMonthlyAmount, &cfg.MedicalPercentageRate, &cfg.MedicalApplyTo,
 		&cfg.LoanEnabled, &cfg.LoanDefaultBehavior, &cfg.LoanAutoDeduct,
+		&cfg.AnnualLeaveBalance, &cfg.SickLeaveBalance, &cfg.PersonalLeaveBalance,
 		&updatedBy, &cfg.CreatedAt, &cfg.UpdatedAt,
 	)
 	if err != nil {
@@ -63,6 +65,7 @@ func (r *SystemConfigRepository) Update(cfg *models.SystemConfig) error {
 		annual_tax_bulk_amount = $21, annual_insurance_bulk_amount = $22,
 		medical_insurance_enabled = $23, medical_deduction_type = $24, medical_fixed_monthly_amount = $25, medical_percentage_rate = $26, medical_apply_to = $27,
 		loan_enabled = $28, loan_default_behavior = $29, loan_auto_deduct = $30,
+		annual_leave_balance = $32, sick_leave_balance = $33, personal_leave_balance = $34,
 		updated_by = $31, updated_at = NOW()
 		WHERE id = 1`
 	_, err := r.db.Exec(q,
@@ -75,6 +78,7 @@ func (r *SystemConfigRepository) Update(cfg *models.SystemConfig) error {
 		cfg.AnnualTaxBulkAmount, cfg.AnnualInsuranceBulkAmount,
 		cfg.MedicalInsuranceEnabled, cfg.MedicalDeductionType, cfg.MedicalFixedMonthlyAmount, cfg.MedicalPercentageRate, cfg.MedicalApplyTo,
 		cfg.LoanEnabled, cfg.LoanDefaultBehavior, cfg.LoanAutoDeduct,
+		cfg.AnnualLeaveBalance, cfg.SickLeaveBalance, cfg.PersonalLeaveBalance,
 		cfg.UpdatedBy,
 	)
 	return err

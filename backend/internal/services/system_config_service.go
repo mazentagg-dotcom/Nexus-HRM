@@ -48,3 +48,11 @@ func (s *SystemConfigService) UpdateBranch(id int, name string, isActive bool) e
 func (s *SystemConfigService) DeleteBranch(id int) error {
 	return s.branchRepo.Delete(id)
 }
+
+func (s *SystemConfigService) GetLeaveBalanceDefaults() (annual, sick, personal float64) {
+	cfg, err := s.configRepo.Get()
+	if err != nil || cfg == nil {
+		return 20, 10, 5
+	}
+	return cfg.AnnualLeaveBalance, cfg.SickLeaveBalance, cfg.PersonalLeaveBalance
+}

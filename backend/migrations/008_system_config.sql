@@ -49,6 +49,10 @@ CREATE TABLE IF NOT EXISTS system_config (
     loan_enabled BOOLEAN NOT NULL DEFAULT true,
     loan_default_behavior VARCHAR(30) NOT NULL DEFAULT 'fixed_installment',
     loan_auto_deduct BOOLEAN NOT NULL DEFAULT true,
+    -- Leave Balance Defaults
+    annual_leave_balance NUMERIC(5,1) NOT NULL DEFAULT 20.0,
+    sick_leave_balance NUMERIC(5,1) NOT NULL DEFAULT 10.0,
+    personal_leave_balance NUMERIC(5,1) NOT NULL DEFAULT 5.0,
     -- Metadata
     updated_by VARCHAR(100),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

@@ -36,7 +36,7 @@ func Load() *Config {
 		DBHost:        getEnv("DB_HOST", "localhost"),
 		DBPort:        getEnv("DB_PORT", "5438"),
 		DBUser:        getEnv("DB_USER", "nexus"),
-		DBPassword:    getEnv("DB_PASSWORD", "nexus_secret_2024"),
+		DBPassword:    getEnv("DB_PASSWORD", ""),
 		DBName:        getEnv("DB_NAME", "nexus_hrm"),
 		DBSSLMode:     getEnv("DB_SSL_MODE", "disable"),
 		DBMaxOpen:     maxOpen,

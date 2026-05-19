@@ -90,31 +90,37 @@ type NotifService interface {
 	CreateNotification(userID, title, message, ntype string, link *string) (*models.Notification, error)
 }
 
-type HRService struct {
-	deptRepo      DepartmentRepo
-	empRepo       EmployeeRepo
-	attRepo       AttendanceRepo
-	leaveRepo     LeaveRequestRepo
-	payrollRepo   PayrollRepo
-	docRepo       DocumentRepo
-	notifService  NotifService
-	loanRepo      LoanRepo
-	deductionRepo DeductionRepo
-	requestRepo   RequestRepo
+type ConfigProvider interface {
+	GetLeaveBalanceDefaults() (annual, sick, personal float64)
 }
 
-func NewHRService(dept DepartmentRepo, emp EmployeeRepo, att AttendanceRepo, leave LeaveRequestRepo, payroll PayrollRepo, doc DocumentRepo, notif NotifService, loan LoanRepo, deduction DeductionRepo, request RequestRepo) *HRService {
+type HRService struct {
+	deptRepo       DepartmentRepo
+	empRepo        EmployeeRepo
+	attRepo        AttendanceRepo
+	leaveRepo      LeaveRequestRepo
+	payrollRepo    PayrollRepo
+	docRepo        DocumentRepo
+	notifService   NotifService
+	loanRepo       LoanRepo
+	deductionRepo  DeductionRepo
+	requestRepo    RequestRepo
+	configProvider ConfigProvider
+}
+
+func NewHRService(dept DepartmentRepo, emp EmployeeRepo, att AttendanceRepo, leave LeaveRequestRepo, payroll PayrollRepo, doc DocumentRepo, notif NotifService, loan LoanRepo, deduction DeductionRepo, request RequestRepo, cfg ConfigProvider) *HRService {
 	return &HRService{
-		deptRepo:      dept,
-		empRepo:       emp,
-		attRepo:       att,
-		leaveRepo:     leave,
-		payrollRepo:   payroll,
-		docRepo:       doc,
-		notifService:  notif,
-		loanRepo:      loan,
-		deductionRepo: deduction,
-		requestRepo:   request,
+		deptRepo:       dept,
+		empRepo:        emp,
+		attRepo:        att,
+		leaveRepo:      leave,
+		payrollRepo:    payroll,
+		docRepo:        doc,
+		notifService:   notif,
+		loanRepo:       loan,
+		deductionRepo:  deduction,
+		requestRepo:    request,
+		configProvider: cfg,
 	}
 }
 
@@ -401,27 +407,23 @@ func (s *HRService) GetLeaveRequests(employeeID, status, leaveType string, page,
 }
 
 func (s *HRService) CreateLeaveRequest(req *models.CreateLeaveRequest) (*models.LeaveRequest, error) {
+	startDate, err := parseDate(req.StartDate)
+	if err != nil {
+		return nil, fmt.Errorf("invalid start_date: %w", err)
+	}
+	endDate, err := parseDate(req.EndDate)
+	if err != nil {
+		return nil, fmt.Errorf("invalid end_date: %w", err)
+	}
+
 	lr := &models.LeaveRequest{
 		EmployeeID:   req.EmployeeID,
 		LeaveType:    req.LeaveType,
-		StartDate:    timeNow(),
-		EndDate:      timeNow(),
+		StartDate:    *startDate,
+		EndDate:      *endDate,
 		DurationDays: req.DurationDays,
 		Reason:       req.Reason,
 		Status:       "pending",
-	}
-
-	if req.StartDate != "" {
-		t, _ := parseDate(req.StartDate)
-		if t != nil {
-			lr.StartDate = *t
-		}
-	}
-	if req.EndDate != "" {
-		t, _ := parseDate(req.EndDate)
-		if t != nil {
-			lr.EndDate = *t
-		}
 	}
 
 	if err := s.leaveRepo.Create(lr); err != nil {
@@ -432,16 +434,21 @@ func (s *HRService) CreateLeaveRequest(req *models.CreateLeaveRequest) (*models.
 }
 
 func (s *HRService) ApproveLeave(id, approverID string) (*models.LeaveRequest, error) {
-	if err := s.leaveRepo.UpdateStatus(id, "approved", approverID); err != nil {
-		return nil, fmt.Errorf("approve leave: %w", err)
-	}
-
 	lr, err := s.leaveRepo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
+	if lr == nil {
+		return nil, ErrNotFound
+	}
+	if lr.Status != "pending" {
+		return nil, fmt.Errorf("cannot approve a %s leave request", lr.Status)
+	}
+	if err := s.leaveRepo.UpdateStatus(id, "approved", approverID); err != nil {
+		return nil, fmt.Errorf("approve leave: %w", err)
+	}
 
-	if lr != nil && lr.EmployeeID != "" {
+	if lr.EmployeeID != "" {
 		emp, empErr := s.empRepo.FindByID(lr.EmployeeID)
 		notifierID := lr.EmployeeID
 		if empErr == nil && emp != nil && emp.UserID != nil {
@@ -455,16 +462,21 @@ func (s *HRService) ApproveLeave(id, approverID string) (*models.LeaveRequest, e
 }
 
 func (s *HRService) RejectLeave(id, approverID, reason string) (*models.LeaveRequest, error) {
-	if err := s.leaveRepo.RejectWithReason(id, approverID, reason); err != nil {
-		return nil, fmt.Errorf("reject leave: %w", err)
-	}
-
 	lr, err := s.leaveRepo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
+	if lr == nil {
+		return nil, ErrNotFound
+	}
+	if lr.Status != "pending" {
+		return nil, fmt.Errorf("cannot reject a %s leave request", lr.Status)
+	}
+	if err := s.leaveRepo.RejectWithReason(id, approverID, reason); err != nil {
+		return nil, fmt.Errorf("reject leave: %w", err)
+	}
 
-	if lr != nil && lr.EmployeeID != "" {
+	if lr.EmployeeID != "" {
 		emp, empErr := s.empRepo.FindByID(lr.EmployeeID)
 		notifierID := lr.EmployeeID
 		if empErr == nil && emp != nil && emp.UserID != nil {
@@ -497,12 +509,14 @@ func (s *HRService) CreatePayroll(req *models.CreatePayrollRequest) (*models.Pay
 		return nil, err
 	}
 
-	records, _, err := s.payrollRepo.FindAll(req.EmployeeID, "draft", 1, 1)
-	if err != nil || len(records) == 0 {
-		return nil, err
+	records, _, err := s.payrollRepo.FindAll(req.EmployeeID, "", 1, 5)
+	if err != nil {
+		return nil, fmt.Errorf("create payroll: %w", err)
 	}
-
-	return &records[0], nil
+	if len(records) == 0 {
+		return nil, fmt.Errorf("payroll record created but not found")
+	}
+	return &records[len(records)-1], nil
 }
 
 func (s *HRService) UpdatePayroll(id string, req *models.UpdatePayrollRequest) (*models.PayrollRecord, error) {
@@ -541,11 +555,13 @@ func (s *HRService) CreateEmployeeDocument(employeeID string, req *models.Create
 	}
 
 	d, err := s.docRepo.FindByEmployeeID(employeeID)
-	if err != nil || len(d) == 0 {
-		return nil, err
+	if err != nil {
+		return nil, fmt.Errorf("find created document: %w", err)
 	}
-
-	return &d[0], nil
+	if len(d) == 0 {
+		return nil, fmt.Errorf("document created but not found")
+	}
+	return &d[len(d)-1], nil
 }
 
 func (s *HRService) DeleteEmployeeDocument(id string) error {
@@ -593,10 +609,25 @@ func (s *HRService) GetLeaveBalance(employeeID string) ([]map[string]interface{}
 		Total float64
 		Used  float64
 	}
+
+	var annualDefault, sickDefault, personalDefault float64 = 20, 10, 5
+	if s.configProvider != nil {
+		a, si, p := s.configProvider.GetLeaveBalanceDefaults()
+		if a > 0 {
+			annualDefault = a
+		}
+		if si > 0 {
+			sickDefault = si
+		}
+		if p > 0 {
+			personalDefault = p
+		}
+	}
+
 	balances := map[string]*balance{
-		"annual":   {Total: 20},
-		"sick":     {Total: 10},
-		"personal": {Total: 5},
+		"annual":   {Total: annualDefault},
+		"sick":     {Total: sickDefault},
+		"personal": {Total: personalDefault},
 	}
 
 	for _, l := range leaves {
@@ -642,6 +673,16 @@ func (s *HRService) CreateLoan(employeeID string, req *models.CreateLoanRequest)
 }
 
 func (s *HRService) UpdateLoanStatus(id, status, approverID string) (*models.LoanRequest, error) {
+	loan, err := s.loanRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if loan == nil {
+		return nil, ErrNotFound
+	}
+	if loan.Status != "pending" {
+		return nil, fmt.Errorf("cannot update a %s loan request", loan.Status)
+	}
 	if err := s.loanRepo.UpdateStatus(id, status, approverID); err != nil {
 		return nil, err
 	}
@@ -673,6 +714,16 @@ func (s *HRService) CreateRequest(req *models.CreateRequest) error {
 }
 
 func (s *HRService) ApproveRequest(id, reviewedBy string) (*models.Request, error) {
+	req, err := s.requestRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if req == nil {
+		return nil, ErrNotFound
+	}
+	if req.Status != "pending" {
+		return nil, fmt.Errorf("cannot approve a %s request", req.Status)
+	}
 	if err := s.requestRepo.UpdateStatus(id, "approved", reviewedBy); err != nil {
 		return nil, err
 	}
@@ -680,6 +731,16 @@ func (s *HRService) ApproveRequest(id, reviewedBy string) (*models.Request, erro
 }
 
 func (s *HRService) RejectRequest(id, reviewedBy, reason string) (*models.Request, error) {
+	req, err := s.requestRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if req == nil {
+		return nil, ErrNotFound
+	}
+	if req.Status != "pending" {
+		return nil, fmt.Errorf("cannot reject a %s request", req.Status)
+	}
 	if err := s.requestRepo.UpdateStatusWithReason(id, "rejected", reviewedBy, reason); err != nil {
 		return nil, err
 	}

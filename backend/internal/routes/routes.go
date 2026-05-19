@@ -30,12 +30,12 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	configRepo := repositories.NewSystemConfigRepository(db)
 	branchRepo := repositories.NewBranchRepository(db)
 
+	configSvc := services.NewSystemConfigService(configRepo, branchRepo)
 	authSvc := services.NewAuthService(userRepo, roleRepo, cfg.JWTSecret, cfg.JWTExpiry)
 	userSvc := services.NewUserService(userRepo)
 	roleSvc := services.NewRoleService(roleRepo)
 	notifSvc := services.NewNotificationService(notifRepo)
-	hrSvc := services.NewHRService(deptRepo, empRepo, attRepo, leaveRepo, payrollRepo, docRepo, notifSvc, loanRepo, deductionRepo, requestRepo)
-	configSvc := services.NewSystemConfigService(configRepo, branchRepo)
+	hrSvc := services.NewHRService(deptRepo, empRepo, attRepo, leaveRepo, payrollRepo, docRepo, notifSvc, loanRepo, deductionRepo, requestRepo, configSvc)
 
 	authHandler := handlers.NewAuthHandler(authSvc)
 	userHandler := handlers.NewUserHandler(userSvc)

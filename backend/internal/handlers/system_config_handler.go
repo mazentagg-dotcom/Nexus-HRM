@@ -29,8 +29,7 @@ func (h *SystemConfigHandler) GetConfig(c *gin.Context) {
 
 func (h *SystemConfigHandler) UpdateConfig(c *gin.Context) {
 	var req models.UpdateSystemConfigRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequest(c, "Invalid request body")
+	if !utils.BindAndValidate(c, &req) {
 		return
 	}
 
@@ -130,6 +129,15 @@ func (h *SystemConfigHandler) UpdateConfig(c *gin.Context) {
 	if req.LoanAutoDeduct != nil {
 		existing.LoanAutoDeduct = *req.LoanAutoDeduct
 	}
+	if req.AnnualLeaveBalance != nil {
+		existing.AnnualLeaveBalance = *req.AnnualLeaveBalance
+	}
+	if req.SickLeaveBalance != nil {
+		existing.SickLeaveBalance = *req.SickLeaveBalance
+	}
+	if req.PersonalLeaveBalance != nil {
+		existing.PersonalLeaveBalance = *req.PersonalLeaveBalance
+	}
 
 	if err := h.service.UpdateConfig(existing); err != nil {
 		utils.InternalError(c, "Failed to update system configuration")
@@ -152,8 +160,7 @@ func (h *SystemConfigHandler) GetBranches(c *gin.Context) {
 
 func (h *SystemConfigHandler) CreateBranch(c *gin.Context) {
 	var req models.CreateBranchRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequest(c, "Invalid request body")
+	if !utils.BindAndValidate(c, &req) {
 		return
 	}
 	isActive := true
@@ -176,8 +183,7 @@ func (h *SystemConfigHandler) UpdateBranch(c *gin.Context) {
 		return
 	}
 	var req models.CreateBranchRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequest(c, "Invalid request body")
+	if !utils.BindAndValidate(c, &req) {
 		return
 	}
 	isActive := true
