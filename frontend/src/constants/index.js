@@ -1,15 +1,40 @@
-export const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: 'LayoutDashboard', permission: 'hr.view', adminOnly: true },
-  { path: '/employees', label: 'Employees', icon: 'Users', permission: 'hr.view', adminOnly: true },
-  { path: '/attendance', label: 'Attendance', icon: 'Activity', permission: 'hr.view', managerOnly: true },
-  { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff', permission: 'hr.view', managerOnly: true },
-  { path: '/payslip', label: 'Payslip', icon: 'DollarSign', permission: 'hr.view', adminOnly: true },
-  { path: '/requests', label: 'Requests', icon: 'ClipboardList', permission: 'hr.view', managerOnly: true },
-  { path: '/documents', label: 'Documents', icon: 'Folder', permission: 'hr.view', adminOnly: true },
-  { path: '/onboarding', label: 'Onboarding', icon: 'ClipboardCheck', permission: 'hr.view', adminOnly: true },
-  { path: '/org-chart', label: 'Org Chart', icon: 'Network', permission: null },
-  { path: '/system-configuration', label: 'System Configuration', icon: 'Settings', permission: 'settings.view', adminOnly: true },
+export const ADMIN_NAV = [
+  { path: '/', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { path: '/employees', label: 'Employees', icon: 'Users' },
+  { path: '/attendance', label: 'Attendance', icon: 'Activity' },
+  { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff' },
+  { path: '/requests', label: 'Requests', icon: 'ClipboardList' },
+  { path: '/onboarding', label: 'Onboarding', icon: 'ClipboardCheck' },
+  { path: '/documents', label: 'Documents', icon: 'Folder' },
+  { path: '/payslip', label: 'Payslip', icon: 'DollarSign' },
+  { path: '/org-chart', label: 'Org Chart', icon: 'Network' },
+  { path: '/system-configuration', label: 'System Configuration', icon: 'Settings' },
 ]
+
+export const MANAGER_NAV = [
+  { path: '/', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { path: '/attendance', label: 'Attendance', icon: 'Activity' },
+  { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff' },
+  { path: '/requests', label: 'Requests', icon: 'ClipboardList' },
+  { path: '/org-chart', label: 'Org Chart', icon: 'Network' },
+]
+
+export const EMPLOYEE_NAV = [
+  { path: '/', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { path: '/attendance', label: 'My Attendance', icon: 'Activity' },
+  { path: '/requests', label: 'My Requests', icon: 'ClipboardList' },
+  { path: '/payslip', label: 'My Payslip', icon: 'DollarSign' },
+  { path: '/documents', label: 'My Documents', icon: 'Folder' },
+  { path: '/org-chart', label: 'Org Chart', icon: 'Network' },
+]
+
+export const ROLE_LABELS = {
+  super_admin: 'Admin',
+  admin: 'Admin',
+  hr_director: 'HR Director',
+  manager: 'Manager',
+  employee: 'Employee',
+}
 
 export const CHART_COLORS = {
   primary: '#4f46e5',

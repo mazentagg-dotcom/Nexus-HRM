@@ -1,7 +1,7 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
-import { NAV_ITEMS } from '../../constants/index'
+import { ADMIN_NAV, MANAGER_NAV, EMPLOYEE_NAV, ROLE_LABELS } from '../../constants/index'
 import {
   LayoutDashboard,
   Users,
@@ -119,7 +119,7 @@ function NavItem({ item, collapsed, isMobile, onClose }) {
 
 function SidebarContent({ collapsed, isMobile, onToggle, onClose, user, logout }) {
   const navigate = useNavigate()
-  const { hasPermission, isAdmin, hasRole } = useAuth()
+  const { isAdmin, hasRole, roles } = useAuth()
 
   const handleLogout = () => {
     logout()
@@ -127,15 +127,12 @@ function SidebarContent({ collapsed, isMobile, onToggle, onClose, user, logout }
   }
 
   const isManager = hasRole('manager')
-  const isEmployee = !isAdmin && !isManager
 
   const visibleItems = isAdmin
-    ? NAV_ITEMS.filter((item) => !item.managerOnly || isManager)
+    ? ADMIN_NAV
     : isManager
-      ? NAV_ITEMS.filter((item) => !item.adminOnly && (!item.permission || hasPermission(item.permission)))
-      : isEmployee
-        ? NAV_ITEMS.filter((item) => !item.adminOnly && !item.managerOnly && (!item.permission || hasPermission(item.permission)))
-        : []
+      ? MANAGER_NAV
+      : EMPLOYEE_NAV
 
   const userInitials = user
     ? `${(user.first_name || '').charAt(0)}${(user.last_name || '').charAt(0)}`.toUpperCase() ||
@@ -146,7 +143,7 @@ function SidebarContent({ collapsed, isMobile, onToggle, onClose, user, logout }
     ? [user.first_name, user.last_name].filter(Boolean).join(' ') || user.name || 'Admin User'
     : 'Admin User'
 
-  const displayRole = user?.roles?.[0]?.name || user?.role || 'Administrator'
+  const displayRole = ROLE_LABELS[roles?.[0]] || 'User'
 
   return (
     <div className="flex h-full flex-col bg-[#0f172a]">

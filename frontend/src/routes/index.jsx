@@ -19,6 +19,11 @@ const SystemConfiguration = lazy(() => import('../pages/system-configuration/Sys
 const AccessDenied = lazy(() => import('../pages/AccessDenied'))
 const NotFound = lazy(() => import('../pages/NotFound'))
 
+const MyAttendance = lazy(() => import('../pages/self-service/MyAttendance'))
+const MyRequests = lazy(() => import('../pages/self-service/MyRequests'))
+const MyPayslip = lazy(() => import('../pages/self-service/MyPayslip'))
+const MyDocuments = lazy(() => import('../pages/self-service/MyDocuments'))
+
 function SuspensePage({ children }) {
   return (
     <ErrorBoundary>
@@ -42,18 +47,54 @@ function LoginRoute() {
   return <Login />
 }
 
-function AdminRoute() {
-  const { isAdmin, loading } = useAuth()
-  if (loading) return <LoadingScreen />
-  if (!isAdmin) return <SuspensePage><AccessDenied /></SuspensePage>
-  return <Outlet />
+function AttendancePage() {
+  const { hasRole } = useAuth()
+  if (hasRole('employee')) return <MyAttendance />
+  return <Attendance />
 }
 
-function ManagerRoute() {
-  const { isAdmin, hasRole, loading } = useAuth()
-  if (loading) return <LoadingScreen />
-  if (!isAdmin && !hasRole('manager')) return <SuspensePage><AccessDenied /></SuspensePage>
-  return <Outlet />
+function LeavePage() {
+  const { hasRole } = useAuth()
+  if (hasRole('employee')) return <MyRequests />
+  return <LeaveRequests />
+}
+
+function RequestsPage() {
+  const { hasRole } = useAuth()
+  if (hasRole('employee')) return <MyRequests />
+  return <Requests />
+}
+
+function PayslipPage() {
+  const { isAdmin, hasRole } = useAuth()
+  if (hasRole('employee')) return <MyPayslip />
+  if (!isAdmin) return <AccessDenied />
+  return <Payslip />
+}
+
+function DocumentsPage() {
+  const { isAdmin, hasRole } = useAuth()
+  if (hasRole('employee')) return <MyDocuments />
+  if (!isAdmin) return <AccessDenied />
+  return <Documents />
+}
+
+function EmployeesPage() {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <AccessDenied />
+  return <Employees />
+}
+
+function OnboardingPage() {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <AccessDenied />
+  return <Onboarding />
+}
+
+function SystemConfigPage() {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <AccessDenied />
+  return <SystemConfiguration />
 }
 
 const router = createBrowserRouter([
@@ -72,27 +113,17 @@ const router = createBrowserRouter([
           { path: 'dashboard', element: <Navigate to="/" replace /> },
           { path: 'self-service', element: <Navigate to="/" replace /> },
           { path: 'employee-dashboard', element: <Navigate to="/" replace /> },
-          {
-            element: <AdminRoute />,
-            children: [
-              { path: 'employees', element: <SuspensePage><Employees /></SuspensePage> },
-              { path: 'payslip', element: <SuspensePage><Payslip /></SuspensePage> },
-              { path: 'documents', element: <SuspensePage><Documents /></SuspensePage> },
-              { path: 'onboarding', element: <SuspensePage><Onboarding /></SuspensePage> },
-              { path: 'system-configuration', element: <SuspensePage><SystemConfiguration /></SuspensePage> },
-              { path: 'settings', element: <Navigate to="/system-configuration" replace /> },
-            ],
-          },
-          {
-            element: <ManagerRoute />,
-            children: [
-              { path: 'attendance', element: <SuspensePage><Attendance /></SuspensePage> },
-              { path: 'leave', element: <SuspensePage><LeaveRequests /></SuspensePage> },
-              { path: 'requests', element: <SuspensePage><Requests /></SuspensePage> },
-            ],
-          },
+          { path: 'employees', element: <SuspensePage><EmployeesPage /></SuspensePage> },
+          { path: 'attendance', element: <SuspensePage><AttendancePage /></SuspensePage> },
+          { path: 'leave', element: <SuspensePage><LeavePage /></SuspensePage> },
+          { path: 'requests', element: <SuspensePage><RequestsPage /></SuspensePage> },
+          { path: 'payslip', element: <SuspensePage><PayslipPage /></SuspensePage> },
+          { path: 'documents', element: <SuspensePage><DocumentsPage /></SuspensePage> },
+          { path: 'onboarding', element: <SuspensePage><OnboardingPage /></SuspensePage> },
+          { path: 'system-configuration', element: <SuspensePage><SystemConfigPage /></SuspensePage> },
+          { path: 'settings', element: <Navigate to="/" replace /> },
           { path: 'org-chart', element: <SuspensePage><OrgChart /></SuspensePage> },
-          { path: 'upload', element: <Navigate to="/onboarding" replace /> },
+          { path: 'upload', element: <Navigate to="/" replace /> },
           { path: 'performance', element: <Navigate to="/" replace /> },
         ],
       },
