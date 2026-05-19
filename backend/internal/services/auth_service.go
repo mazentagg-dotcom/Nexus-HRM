@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -108,7 +109,18 @@ func (s *AuthService) Register(req *models.CreateUserRequest) (*models.User, err
 	}
 
 	if len(req.RoleIDs) > 0 {
+		allowedRoles := []string{"employee", "manager"}
 		for _, roleID := range req.RoleIDs {
+			isAllowed := false
+			for _, allowed := range allowedRoles {
+				if roleID == allowed {
+					isAllowed = true
+					break
+				}
+			}
+			if !isAllowed {
+				return nil, fmt.Errorf("self-registration only allows 'employee' or 'manager' role")
+			}
 			if err := s.roleRepo.AssignRoleToUser(user.ID, roleID); err != nil {
 				return nil, err
 			}

@@ -13,9 +13,9 @@ function getStatusForEmployee(emp, todayRecords) {
 
   if (!todayRec) return { attendance: 'Not Checked In', availability: 'Offline' }
   if (todayRec.status === 'absent') return { attendance: 'Absent', availability: 'Offline' }
-  if (todayRec.status === 'on_leave' || todayRec.status === 'on_leave') return { attendance: 'On Leave', availability: 'Offline' }
-  if (todayRec.check_out) return { attendance: 'Present', availability: 'Offline' }
-  if (todayRec.check_in) return { attendance: 'Present', availability: 'Away' }
+  if (todayRec.status === 'on_leave') return { attendance: 'On Leave', availability: 'Offline' }
+  if (todayRec.check_out) return { attendance: 'Present', availability: 'Online' }
+  if (todayRec.check_in) return { attendance: 'Present', availability: 'Online' }
   return { attendance: 'Not Checked In', availability: 'Offline' }
 }
 
@@ -50,7 +50,7 @@ export default function useTeamData() {
   const fetchTeamData = useCallback(async () => {
     setLoading(true)
     try {
-      const empRes = await getEmployees({ page: 1, pageSize: 100 })
+      const empRes = await getEmployees({ page: 1, pageSize: 200 })
       const empData = empRes.data?.data
       const emps = empData?.items || empData || []
 

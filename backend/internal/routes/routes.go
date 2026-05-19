@@ -71,6 +71,9 @@ func SetupRoutes(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 			me.POST("/attendance/check-out", hrHandler.CheckOut)
 			me.GET("/loans", hrHandler.GetMyLoans)
 			me.POST("/loans", hrHandler.CreateMyLoan)
+			me.GET("/requests", hrHandler.GetMyRequests)
+			me.POST("/requests", hrHandler.CreateMyRequest)
+			me.GET("/documents", hrHandler.GetMyDocuments)
 		}
 
 		users := api.Group("/users")

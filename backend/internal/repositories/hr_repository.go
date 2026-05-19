@@ -167,9 +167,9 @@ func (r *EmployeeRepository) FindAll(search, department, status string, page, pa
 	where = append(where, "1=1")
 
 	if search != "" {
-		where = append(where, fmt.Sprintf("(e.first_name || ' ' || e.last_name) ILIKE '%%' || $%d || '%%' OR e.employee_code ILIKE '%%' || $%d || '%%' OR e.email ILIKE '%%' || $%d || '%%'", argN, argN, argN))
+		where = append(where, fmt.Sprintf("(e.first_name || ' ' || e.last_name) ILIKE '%%' || $%d || '%%' OR e.employee_code ILIKE '%%' || $%d || '%%' OR e.email ILIKE '%%' || $%d || '%%'", argN, argN+1, argN+2))
 		args = append(args, search, search, search)
-		argN++
+		argN += 3
 	}
 
 	if department != "" {

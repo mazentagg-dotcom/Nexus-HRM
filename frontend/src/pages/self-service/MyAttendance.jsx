@@ -5,7 +5,7 @@ import AnimatedTable from '../../components/AnimatedTable'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import { useToast } from '../../components/feedback/Toast'
-import { getMyAttendance, createRequest } from '../../api/hr'
+import { getMyAttendance, createMyRequest } from '../../api/hr'
 import { Clock, AlertTriangle, X, Send } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -40,7 +40,7 @@ export default function MyAttendance() {
     }
     setSubmitting(true)
     try {
-      await createRequest({
+      await createMyRequest({
         request_type: 'attendance_correction',
         title: `Attendance Correction - ${form.date}`,
         description: `Issue: ${form.issue_type}\nExplanation: ${form.explanation}`,

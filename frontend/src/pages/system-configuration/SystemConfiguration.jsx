@@ -25,6 +25,7 @@ const SECTIONS = [
 
 function CompanyProfileSection() {
   const { showToast } = useToast()
+  const { config, updateConfig, saveConfig } = useSystemConfig()
   const [profile, setProfile] = useState({
     company_name: 'Nexus HRM Demo Corp',
     industry: 'Technology',
@@ -38,7 +39,16 @@ function CompanyProfileSection() {
     address: 'Cairo, Egypt',
   })
   const upd = (key) => (v) => setProfile(p => ({ ...p, [key]: v }))
-  const save = () => showToast('Company profile saved', 'success')
+  const save = async () => {
+    try {
+      const updated = { ...config, company_profile: profile }
+      updateConfig(updated)
+      await saveConfig(updated)
+      showToast('Company profile saved', 'success')
+    } catch (e) {
+      showToast('Failed to save company profile', 'error')
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -344,6 +354,7 @@ function PermissionsTab() {
 
 function LanguageSection() {
   const { showToast } = useToast()
+  const { config, updateConfig, saveConfig } = useSystemConfig()
   const [lang, setLang] = useState({
     display_language: 'en',
     date_format: 'dd/mm/yyyy',
@@ -352,9 +363,16 @@ function LanguageSection() {
     first_day_of_week: 'monday',
   })
   const upd = (key) => (v) => setLang(p => ({ ...p, [key]: v }))
-  const save = () => {
-    showToast('Language preferences saved', 'success')
-    if (lang.display_language === 'fr') showToast('Display language set to French (requires page reload)', 'info')
+  const save = async () => {
+    try {
+      const updated = { ...config, language: lang }
+      updateConfig(updated)
+      await saveConfig(updated)
+      showToast('Language preferences saved', 'success')
+      if (lang.display_language === 'fr') showToast('Display language set to French (requires page reload)', 'info')
+    } catch (e) {
+      showToast('Failed to save language preferences', 'error')
+    }
   }
 
   return (

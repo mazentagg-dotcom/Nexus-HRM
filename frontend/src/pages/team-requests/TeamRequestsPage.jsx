@@ -7,10 +7,9 @@ import Modal from '../../components/ui/Modal'
 import Textarea from '../../components/ui/Textarea'
 import { useToast } from '../../components/feedback/Toast'
 import { useI18n } from '../../i18n'
-import { REQUEST_TYPES } from '../../constants/hr'
-import { getRequests, createRequest, approveRequest, rejectRequest, getLeaveRequests, approveLeave, rejectLeave } from '../../api/hr'
+import { getRequests, approveRequest, rejectRequest, getLeaveRequests, approveLeave, rejectLeave } from '../../api/hr'
 import { useAuth } from '../../hooks/useAuth'
-import { ClipboardList, Check, X, Eye, Plus } from 'lucide-react'
+import { ClipboardList, Check, X, Eye } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
 const fadeUp = {

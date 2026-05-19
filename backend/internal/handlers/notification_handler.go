@@ -37,6 +37,11 @@ func (h *NotificationsHandler) GetNotifications(c *gin.Context) {
 
 func (h *NotificationsHandler) GetNotification(c *gin.Context) {
 	id := c.Param("id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.Unauthorized(c, "User not authenticated")
+		return
+	}
 
 	notification, err := h.service.GetNotification(id)
 	if err != nil {
@@ -45,6 +50,11 @@ func (h *NotificationsHandler) GetNotification(c *gin.Context) {
 			return
 		}
 		utils.InternalError(c, "Failed to fetch notification")
+		return
+	}
+
+	if notification.UserID != userID.(string) {
+		utils.NotFound(c, "Notification not found")
 		return
 	}
 
@@ -69,6 +79,17 @@ func (h *NotificationsHandler) GetUnreadCount(c *gin.Context) {
 
 func (h *NotificationsHandler) MarkRead(c *gin.Context) {
 	id := c.Param("id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	notif, err := h.service.GetNotification(id)
+	if err != nil || notif == nil || notif.UserID != userID.(string) {
+		utils.NotFound(c, "Notification not found")
+		return
+	}
 
 	if err := h.service.MarkRead(id); err != nil {
 		if errors.Is(err, services.ErrNotFound) {
@@ -99,6 +120,17 @@ func (h *NotificationsHandler) MarkAllRead(c *gin.Context) {
 
 func (h *NotificationsHandler) DeleteNotification(c *gin.Context) {
 	id := c.Param("id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	notif, err := h.service.GetNotification(id)
+	if err != nil || notif == nil || notif.UserID != userID.(string) {
+		utils.NotFound(c, "Notification not found")
+		return
+	}
 
 	if err := h.service.DeleteNotification(id); err != nil {
 		if errors.Is(err, services.ErrNotFound) {

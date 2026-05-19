@@ -713,3 +713,64 @@ func (h *HRHandler) RejectRequest(c *gin.Context) {
 	}
 	utils.Success(c, result)
 }
+
+func (h *HRHandler) GetMyRequests(c *gin.Context) {
+	p := utils.GetPagination(c)
+	status := c.Query("status")
+	requestType := c.Query("request_type")
+	userID := c.GetString("user_id")
+
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		items := make([]models.Request, 0)
+		utils.Paginated(c, items, 0, p)
+		return
+	}
+
+	items, total, err := h.service.GetRequests(emp.ID, status, requestType, p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load requests")
+		return
+	}
+	utils.Paginated(c, items, total, p)
+}
+
+func (h *HRHandler) CreateMyRequest(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.Error(c, http.StatusBadRequest, "Bad Request", "No employee record found")
+		return
+	}
+
+	var req models.CreateRequest
+	if !utils.BindAndValidate(c, &req) {
+		return
+	}
+	req.EmployeeID = emp.ID
+	if err := h.service.CreateRequest(&req); err != nil {
+		utils.Error(c, http.StatusConflict, "Conflict", err.Error())
+		return
+	}
+	utils.Success(c, map[string]string{"message": "Request submitted"})
+}
+
+func (h *HRHandler) GetMyDocuments(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	emp, err := h.service.FindEmployeeByUserID(userID)
+	if err != nil || emp == nil {
+		utils.Success(c, []models.EmployeeDocument{})
+		return
+	}
+
+	docType := c.Query("doc_type")
+	p := utils.GetPagination(c)
+	items, total, err := h.service.GetEmployeeDocuments(emp.ID, docType, p.Page, p.PageSize)
+	if err != nil {
+		utils.InternalError(c, "Failed to load documents")
+		return
+	}
+	utils.Paginated(c, items, total, p)
+}

@@ -11,7 +11,7 @@ import Select from '../../components/ui/Select'
 import Textarea from '../../components/ui/Textarea'
 import Input from '../../components/ui/Input'
 import { useToast } from '../../components/feedback/Toast'
-import { createRequest } from '../../api/hr'
+import { createMyRequest } from '../../api/hr'
 import {
   getMyEmployee, getMyLeaveBalance, getMyLeaveRequests,
   getMyAttendance, getMyPayroll, getMyLoans,
@@ -176,7 +176,7 @@ export default function EmployeeDashboard() {
     if (!contactForm.subject || !contactForm.message) { showToast('Please fill all fields', 'error'); return }
     setContacting(true)
     try {
-      await createRequest({
+      await createMyRequest({
         request_type: contactForm.category || 'other',
         title: `[Contact HR] ${contactForm.subject}`,
         description: `Category: ${contactForm.category}\n${contactForm.message}`,

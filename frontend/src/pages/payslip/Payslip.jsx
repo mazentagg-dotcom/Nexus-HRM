@@ -9,7 +9,6 @@ import { useToast } from '../../components/feedback/Toast'
 import { getPayrollRecords, getEmployees, getDeductions, createDeduction, updateDeduction, deleteDeduction, updatePayrollRecord } from '../../api/hr'
 import { useSystemConfig, calcFullPayslip, generateMockEmployeeFlags, buildAutoDeductions } from '../../store/systemConfig'
 import { useI18n } from '../../i18n'
-import { DEDUCTION_TYPES } from '../../constants/hr'
 import { DollarSign, FileText, Eye, Download, Check, Plus, Edit, Trash2, Lock, Info } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }

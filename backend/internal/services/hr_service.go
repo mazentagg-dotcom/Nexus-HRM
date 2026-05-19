@@ -231,9 +231,15 @@ func (s *HRService) UpdateDepartment(id string, req *models.UpdateDepartmentRequ
 	if req.Code != nil {
 		d.Code = *req.Code
 	}
-	d.ParentID = req.ParentID
-	d.ManagerID = req.ManagerID
-	d.Description = req.Description
+	if req.ParentID != nil {
+		d.ParentID = req.ParentID
+	}
+	if req.ManagerID != nil {
+		d.ManagerID = req.ManagerID
+	}
+	if req.Description != nil {
+		d.Description = req.Description
+	}
 	if req.Budget != nil {
 		d.Budget = req.Budget
 	}

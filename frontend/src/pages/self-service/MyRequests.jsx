@@ -11,7 +11,7 @@ import Input from '../../components/ui/Input'
 import { useToast } from '../../components/feedback/Toast'
 import {
   getMyLeaveRequests, getMyLeaveBalance, createMyLeaveRequest,
-  getMyLoans, createMyLoan, createRequest, getRequests,
+  getMyLoans, createMyLoan, getMyRequests, createMyRequest,
 } from '../../api/hr'
 import {
   CalendarDays, Thermometer, Landmark, AlertTriangle,
@@ -85,22 +85,26 @@ export default function MyRequests() {
       getMyLeaveRequests({ page: 1, pageSize: 100 }),
       getMyLeaveBalance(),
       getMyLoans({ page: 1, pageSize: 50 }),
-      getRequests({ page: 1, pageSize: 100 }),
-    ])
-    if (lvRes.status === 'fulfilled') {
-      const d = lvRes.value.data?.data
-      setLeaves(d?.items || d || [])
-    }
-    if (balRes.status === 'fulfilled') setBalance(balRes.value.data?.data || null)
-    if (loanRes.status === 'fulfilled') {
-      const d = loanRes.value.data?.data
-      setLoans(d?.items || d || [])
-    }
-    if (reqRes.status === 'fulfilled') {
-      const d = reqRes.value.data?.data
-      setAllRequests(d?.items || d || [])
-    }
-    setLoading(false)
+      getMyRequests({ page: 1, pageSize: 100 }),
+    ]).then(([lvRes, balRes, loanRes, reqRes]) => {
+      if (lvRes.status === 'fulfilled') {
+        const d = lvRes.value.data?.data
+        setLeaves(d?.items || d || [])
+      }
+      if (balRes.status === 'fulfilled') setBalance(balRes.value.data?.data || null)
+      if (loanRes.status === 'fulfilled') {
+        const d = loanRes.value.data?.data
+        setLoans(d?.items || d || [])
+      }
+      if (reqRes.status === 'fulfilled') {
+        const d = reqRes.value.data?.data
+        setAllRequests(d?.items || d || [])
+      }
+    }).catch(() => {
+      console.error('Failed to fetch data')
+    }).finally(() => {
+      setLoading(false)
+    })
   }
 
   useEffect(() => { fetchData() }, [])
@@ -169,7 +173,7 @@ export default function MyRequests() {
     if (!correctionForm.date || !correctionForm.issue_type || !correctionForm.explanation) { showToast('Please fill all fields', 'error'); return }
     setSubmitting(true)
     try {
-      await createRequest({
+      await createMyRequest({
         request_type: 'attendance_correction',
         title: `Correction - ${correctionForm.date}`,
         description: `Issue: ${correctionForm.issue_type}\n${correctionForm.explanation}`,
@@ -186,7 +190,7 @@ export default function MyRequests() {
     if (!generalForm.title || !generalForm.description) { showToast('Please fill all fields', 'error'); return }
     setSubmitting(true)
     try {
-      await createRequest({
+      await createMyRequest({
         request_type: generalForm.category === 'other' ? 'other' : generalForm.category,
         title: generalForm.title,
         description: `[${generalForm.category}] ${generalForm.description}`,
