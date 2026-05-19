@@ -1,16 +1,14 @@
 export const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: 'LayoutDashboard', permission: 'hr.view', adminOnly: true },
-  { path: '/employee-dashboard', label: 'Dashboard', icon: 'LayoutDashboard', permission: null, employeeOnly: true },
-  { path: '/employees', label: 'Employees', icon: 'Users', permission: 'hr.view' },
-  { path: '/attendance', label: 'Attendance', icon: 'Activity', permission: 'hr.view' },
-  { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff', permission: 'hr.view' },
-  { path: '/payslip', label: 'Payslip', icon: 'DollarSign', permission: 'hr.view' },
-  { path: '/requests', label: 'Requests', icon: 'ClipboardList', permission: 'hr.view' },
-  { path: '/documents', label: 'Documents', icon: 'Folder', permission: 'hr.view' },
-  { path: '/onboarding', label: 'Onboarding', icon: 'ClipboardCheck', permission: 'hr.view' },
-  { path: '/org-chart', label: 'Org Chart', icon: 'Network', permission: 'hr.view' },
-  { path: '/self-service', label: 'Self Service', icon: 'ClipboardList', permission: null, employeeOnly: true },
-  { path: '/system-configuration', label: 'System Configuration', icon: 'Settings', permission: 'settings.view' },
+  { path: '/employees', label: 'Employees', icon: 'Users', permission: 'hr.view', adminOnly: true },
+  { path: '/attendance', label: 'Attendance', icon: 'Activity', permission: 'hr.view', managerOnly: true },
+  { path: '/leave', label: 'Leave Requests', icon: 'CalendarOff', permission: 'hr.view', managerOnly: true },
+  { path: '/payslip', label: 'Payslip', icon: 'DollarSign', permission: 'hr.view', adminOnly: true },
+  { path: '/requests', label: 'Requests', icon: 'ClipboardList', permission: 'hr.view', managerOnly: true },
+  { path: '/documents', label: 'Documents', icon: 'Folder', permission: 'hr.view', adminOnly: true },
+  { path: '/onboarding', label: 'Onboarding', icon: 'ClipboardCheck', permission: 'hr.view', adminOnly: true },
+  { path: '/org-chart', label: 'Org Chart', icon: 'Network', permission: null },
+  { path: '/system-configuration', label: 'System Configuration', icon: 'Settings', permission: 'settings.view', adminOnly: true },
 ]
 
 export const CHART_COLORS = {

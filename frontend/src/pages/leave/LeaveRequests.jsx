@@ -10,6 +10,7 @@ import Textarea from '../../components/ui/Textarea'
 import { useToast } from '../../components/feedback/Toast'
 import { useI18n } from '../../i18n'
 import { getLeaveRequests, createLeaveRequest, approveLeave, rejectLeave, getEmployees } from '../../api/hr'
+import { useAuth } from '../../hooks/useAuth'
 import { Plus, Check, X } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -20,6 +21,7 @@ const typeColors = { annual: 'blue', sick: 'emerald', personal: 'purple', unpaid
 
 export default function LeaveRequests() {
   const { t } = useI18n()
+  const { isAdmin } = useAuth()
   const [loading, setLoading] = useState(true)
   const [leavesData, setLeavesData] = useState(null)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -79,7 +81,7 @@ export default function LeaveRequests() {
         <div><h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('leaveRequests')}</h1><p className="mt-1 text-sm text-gray-500">{t('manageLeaves')}</p></div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant={thisMonth ? 'primary' : 'secondary'} onClick={() => setThisMonth(p => !p)}>{t('thisMonth')}</Button>
-          <Button size="sm" icon={Plus} onClick={() => setShowLeaveModal(true)}>{t('newLeaveRequest')}</Button>
+          {isAdmin && <Button size="sm" icon={Plus} onClick={() => setShowLeaveModal(true)}>{t('newLeaveRequest')}</Button>}
         </div>
       </motion.div>
 

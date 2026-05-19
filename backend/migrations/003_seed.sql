@@ -51,6 +51,8 @@ INSERT INTO permissions (id, name, module, action, description) VALUES
 INSERT INTO roles (id, name, slug, description, is_system) VALUES
     ('a0000000-0000-0000-0000-000000000001', 'Super Admin',    'super_admin', 'Full system access with all permissions', true) ON CONFLICT (slug) DO NOTHING;
 INSERT INTO roles (id, name, slug, description, is_system) VALUES
+    ('a0000000-0000-0000-0000-000000000005', 'Admin',          'admin',       'Full system access (same as Super Admin)', true) ON CONFLICT (slug) DO NOTHING;
+INSERT INTO roles (id, name, slug, description, is_system) VALUES
     ('a0000000-0000-0000-0000-000000000002', 'HR Director',    'hr_director', 'HR management with full HR permissions', false) ON CONFLICT (slug) DO NOTHING;
 INSERT INTO roles (id, name, slug, description, is_system) VALUES
     ('a0000000-0000-0000-0000-000000000003', 'Manager',        'manager',     'Department manager with team oversight', false) ON CONFLICT (slug) DO NOTHING;
@@ -62,12 +64,17 @@ INSERT INTO roles (id, name, slug, description, is_system) VALUES
 -- ============================================
 INSERT INTO role_permissions (role_id, permission_id) SELECT 'a0000000-0000-0000-0000-000000000001', id FROM permissions ON CONFLICT DO NOTHING;
 
+-- ============================================
+-- Admin - All permissions (same as Super Admin)
+-- ============================================
+INSERT INTO role_permissions (role_id, permission_id) SELECT 'a0000000-0000-0000-0000-000000000005', id FROM permissions ON CONFLICT DO NOTHING;
+
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT 'a0000000-0000-0000-0000-000000000004', id FROM permissions WHERE module = 'self_service'
 ON CONFLICT DO NOTHING;
 
 -- ============================================
--- HR Director - all HR + users.view/create/edit + settings
+-- HR Director - all HR + users.view/create/edit + settings + self_service
 -- ============================================
 INSERT INTO role_permissions (role_id, permission_id) VALUES
     ('a0000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001') ON CONFLICT DO NOTHING;
@@ -79,9 +86,10 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
     ('a0000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000005') ON CONFLICT DO NOTHING;
 INSERT INTO role_permissions (role_id, permission_id) SELECT 'a0000000-0000-0000-0000-000000000002', id FROM permissions WHERE module = 'hr' ON CONFLICT DO NOTHING;
 INSERT INTO role_permissions (role_id, permission_id) SELECT 'a0000000-0000-0000-0000-000000000002', id FROM permissions WHERE module = 'settings' ON CONFLICT DO NOTHING;
+INSERT INTO role_permissions (role_id, permission_id) SELECT 'a0000000-0000-0000-0000-000000000002', id FROM permissions WHERE module = 'self_service' ON CONFLICT DO NOTHING;
 
 -- ============================================
--- Manager - HR view, approve, attendance + users.view + settings.view
+-- Manager - HR view, approve, attendance + users.view + settings.view + self_service
 -- ============================================
 INSERT INTO role_permissions (role_id, permission_id) VALUES
     ('a0000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001') ON CONFLICT DO NOTHING;
@@ -95,12 +103,14 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
     ('a0000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000008') ON CONFLICT DO NOTHING;
 INSERT INTO role_permissions (role_id, permission_id) VALUES
     ('a0000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000001') ON CONFLICT DO NOTHING;
+INSERT INTO role_permissions (role_id, permission_id) SELECT 'a0000000-0000-0000-0000-000000000003', id FROM permissions WHERE module = 'self_service' ON CONFLICT DO NOTHING;
 
 -- ============================================
--- Employee - users.view only (self-service)
+-- Employee - users.view + self_service
 -- ============================================
 INSERT INTO role_permissions (role_id, permission_id) VALUES
     ('a0000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001') ON CONFLICT DO NOTHING;
+INSERT INTO role_permissions (role_id, permission_id) SELECT 'a0000000-0000-0000-0000-000000000004', id FROM permissions WHERE module = 'self_service' ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- Users
@@ -120,12 +130,19 @@ INSERT INTO users (id, email, password_hash, first_name, last_name, phone, is_ac
      '$2a$10$4LuI30K88sg.55WaCOKwWuwS5pgAYbuXZzsOtzsw4qZYxS0TD3VsK',
      'John', 'Doe', '+1 (555) 000-0003', true, true) ON CONFLICT (email) DO NOTHING;
 
+INSERT INTO users (id, email, password_hash, first_name, last_name, phone, is_active, is_verified) VALUES
+    ('b0000000-0000-0000-0000-000000000004', 'manager@nexus-hrm.com',
+     '$2a$10$4LuI30K88sg.55WaCOKwWuwS5pgAYbuXZzsOtzsw4qZYxS0TD3VsK',
+     'Sarah', 'Manager', '+1 (555) 000-0004', true, true) ON CONFLICT (email) DO NOTHING;
+
 INSERT INTO user_roles (user_id, role_id) VALUES
     ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001') ON CONFLICT DO NOTHING;
 INSERT INTO user_roles (user_id, role_id) VALUES
     ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002') ON CONFLICT DO NOTHING;
 INSERT INTO user_roles (user_id, role_id) VALUES
     ('b0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004') ON CONFLICT DO NOTHING;
+INSERT INTO user_roles (user_id, role_id) VALUES
+    ('b0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000003') ON CONFLICT DO NOTHING;
 
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT 'a0000000-0000-0000-0000-000000000002', id FROM permissions WHERE module = 'self_service'

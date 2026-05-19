@@ -9,6 +9,7 @@ import { useToast } from '../../components/feedback/Toast'
 import { useI18n } from '../../i18n'
 import { REQUEST_TYPES } from '../../constants/hr'
 import { getRequests, createRequest, approveRequest, rejectRequest, getEmployees } from '../../api/hr'
+import { useAuth } from '../../hooks/useAuth'
 import { ClipboardList, Check, X, Eye, Plus } from 'lucide-react'
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } }
@@ -19,6 +20,7 @@ const typeColors = { leave: 'blue', vacation: 'purple', loan: 'emerald', attenda
 
 export default function Requests() {
   const { t } = useI18n()
+  const { isAdmin } = useAuth()
   const [loading, setLoading] = useState(true)
   const [requests, setRequests] = useState([])
   const [employees, setEmployees] = useState([])
@@ -104,7 +106,7 @@ export default function Requests() {
         <div><h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('requests')} & {t('approvals')}</h1><p className="mt-1 text-sm text-gray-500">{t('reviewRequestsDesc')}</p></div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant={thisMonth ? 'primary' : 'secondary'} onClick={() => setThisMonth(p => !p)}>{t('thisMonth')}</Button>
-          <Button size="sm" icon={Plus} onClick={() => { setForm({ employee_id: '', request_type: 'leave', reason: '' }); setShowNewModal(true) }}>{t('newRequest')}</Button>
+          {isAdmin && <Button size="sm" icon={Plus} onClick={() => { setForm({ employee_id: '', request_type: 'leave', reason: '' }); setShowNewModal(true) }}>{t('newRequest')}</Button>}
         </div>
       </motion.div>
 

@@ -119,16 +119,23 @@ function NavItem({ item, collapsed, isMobile, onClose }) {
 
 function SidebarContent({ collapsed, isMobile, onToggle, onClose, user, logout }) {
   const navigate = useNavigate()
-  const { hasPermission, isAdmin } = useAuth()
+  const { hasPermission, isAdmin, hasRole } = useAuth()
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
+  const isManager = hasRole('manager')
+  const isEmployee = !isAdmin && !isManager
+
   const visibleItems = isAdmin
-    ? NAV_ITEMS.filter((item) => !item.employeeOnly)
-    : NAV_ITEMS.filter((item) => !item.adminOnly && (!item.permission || hasPermission(item.permission)))
+    ? NAV_ITEMS.filter((item) => !item.managerOnly || isManager)
+    : isManager
+      ? NAV_ITEMS.filter((item) => !item.adminOnly && (!item.permission || hasPermission(item.permission)))
+      : isEmployee
+        ? NAV_ITEMS.filter((item) => !item.adminOnly && !item.managerOnly && (!item.permission || hasPermission(item.permission)))
+        : []
 
   const userInitials = user
     ? `${(user.first_name || '').charAt(0)}${(user.last_name || '').charAt(0)}`.toUpperCase() ||

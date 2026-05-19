@@ -1,0 +1,376 @@
+[
+  {
+    "id": 1,
+    "title": "Intro / Welcome",
+    "page": "login",
+    "voiceover": "Hi Dr. Mohamed Yehya, welcome to Nexus-HRM. This demo shows the system from the Super Admin perspective. As a Super Admin, you can manage the full HR operation, configure company rules, control branches, review employee records, track attendance, manage documents, approve requests, and automate payroll deductions through one centralized platform.",
+    "callouts": [
+      "Super Admin View",
+      "Centralized HR System",
+      "Automated Payroll",
+      "One Source of Truth"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 2,
+    "title": "Dashboard Overview",
+    "page": "dashboard",
+    "voiceover": "The Dashboard gives the Super Admin a high-level view of the company. From here, management can monitor employee activity, attendance status, payroll indicators, pending requests, and key HR metrics without opening every page manually.",
+    "callouts": [
+      "Total Employees",
+      "Attendance Summary",
+      "Payroll Overview",
+      "Pending Requests"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 3,
+    "title": "Employees Page",
+    "page": "employees",
+    "voiceover": "The Employees page is the main employee database. Each employee record includes employee ID, branch, department, designation, employment date, status, and basic salary. The branch field is important because the same branch value is used across attendance, documents, requests, approvals, payroll, and payslips.",
+    "callouts": [
+      "Employee ID",
+      "Branch",
+      "Department",
+      "Basic Salary",
+      "Status"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 3,
+    "title": "Employees Page - Actions",
+    "page": "employees",
+    "voiceover": "From here, the Super Admin or HR team can add employees, update records, and keep employee data consistent across the system.",
+    "callouts": [
+      "Add Employee",
+      "Search",
+      "Filter"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 4,
+    "title": "Onboarding",
+    "page": "onboarding",
+    "voiceover": "The Onboarding page is where new customers import their employee data. Instead of entering every employee manually, the company downloads a template, fills employee information, uploads the file, previews the data, and imports employees into Nexus-HRM.",
+    "callouts": [
+      "Download Template",
+      "Upload CSV/XLSX",
+      "Preview Employees",
+      "Import"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 4,
+    "title": "Onboarding - Flexible Columns",
+    "page": "onboarding",
+    "voiceover": "The import is flexible. If the uploaded file has column names that do not match perfectly, the system detects important fields like employee name, employee ID, branch, department, designation, employment date, basic salary, and status. This makes onboarding easier for clients because they do not need to format every file perfectly before importing.",
+    "callouts": [
+      "Flexible Column Mapping",
+      "Auto-Detect Fields"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 5,
+    "title": "Attendance Page",
+    "page": "attendance",
+    "voiceover": "The Attendance page shows attendance activity across employees and branches. Attendance can come from CSV or Excel files, fingerprint machines, faceprint devices, APIs, or future local connectors.",
+    "callouts": [
+      "Clock In",
+      "Clock Out",
+      "Late",
+      "Absent",
+      "Overtime"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 5,
+    "title": "Attendance - Deductions",
+    "page": "attendance",
+    "voiceover": "Once attendance logs enter the system, Nexus-HRM matches them to the correct employee using employee ID, device user ID, fingerprint ID, or faceprint ID. Then the system applies the attendance policy from System Configuration and calculates deductions automatically.",
+    "callouts": [
+      "Auto Match",
+      "Policy Applied",
+      "Deductions Calculated"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 6,
+    "title": "Requests and Approvals",
+    "page": "requests",
+    "voiceover": "Requests and Approvals manage HR workflows such as leave requests, vacation requests, loan requests, attendance corrections, payroll corrections, document requests, and other internal requests. Managers or authorized admins can approve or reject requests, while the Super Admin maintains full visibility over the workflow.",
+    "callouts": [
+      "Pending",
+      "Approved",
+      "Rejected",
+      "Approve",
+      "Reject"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 7,
+    "title": "Documents Page",
+    "page": "documents",
+    "voiceover": "The Documents module is employee-centered. Instead of showing a disconnected flat file list, Nexus-HRM first shows employees. When you open an employee, you can view all documents related to that person. Each document can have a status such as missing, uploaded, pending review, expired, or verified. This helps HR track compliance and missing documents per employee.",
+    "callouts": [
+      "Employee Documents",
+      "Missing",
+      "Uploaded",
+      "Verified",
+      "Expired"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 8,
+    "title": "Payslip Overview",
+    "page": "payslip",
+    "voiceover": "The Payslip module has two sub-tabs: Payroll and Deductions. Payroll shows salary calculations, gross salary, total deductions, net salary, and payment status. Deductions shows each deduction and where it came from.",
+    "callouts": [
+      "Payroll Tab",
+      "Deductions Tab",
+      "Gross Salary",
+      "Net Salary"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 9,
+    "title": "Payslip - Payroll Sub-tab",
+    "page": "payslip-payroll",
+    "voiceover": "In the Payroll sub-tab, Nexus-HRM calculates each employee's payslip. The system combines basic salary, allowances, overtime, company-level deductions, employee rule deductions, and attendance rule deductions to calculate the final net salary. The goal is to remove manual calculation from HR. The system reads the configured rules and employee data, then calculates the payroll automatically.",
+    "callouts": [
+      "Basic Salary",
+      "Gross Salary",
+      "Total Deductions",
+      "Net Salary",
+      "Auto Calculated"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 10,
+    "title": "Payslip - Deductions Sub-tab",
+    "page": "payslip-deductions",
+    "voiceover": "The Deductions sub-tab shows all deductions and their source. Company-level deductions include tax and company insurance. Employee rule deductions include medical insurance and loans. Attendance rule deductions include absence, late arrival, and early leave deductions. Auto-calculated deductions should be viewable, but not manually edited like normal deductions. This protects the payroll logic and prevents HR from changing values that should come from system rules.",
+    "callouts": [
+      "Company-Level Auto",
+      "Employee Rule Auto",
+      "Attendance Rule Auto",
+      "Manual Adjustment"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 11,
+    "title": "System Configuration Intro",
+    "page": "system-config",
+    "voiceover": "Now let's do a deeper dive into System Configuration. This is the control center of Nexus-HRM. System Configuration replaces Settings and contains the company-level rules that drive branches, attendance, payroll, deductions, tax, insurance, medical insurance, loans, permissions, and language.",
+    "callouts": [
+      "System Configuration",
+      "Replaces Settings",
+      "Control Center"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 12,
+    "title": "System Configuration - Vertical Sidebar",
+    "page": "system-config",
+    "voiceover": "Instead of horizontal tabs, System Configuration uses a vertical internal sidebar. This makes the configuration area easier to scale as more company settings are added. The sidebar includes Company Profile, Branches, Attendance Configuration, Payroll Rules, Company-Level Deductions, Medical Insurance, Loans, Permissions, and Language.",
+    "callouts": [
+      "Vertical Sidebar",
+      "9 Configuration Sections",
+      "Scalable Layout"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 13,
+    "title": "System Configuration - Branches",
+    "page": "config-branches",
+    "voiceover": "In Branches, the Super Admin can add and manage company branches. Branches are created once here, then used across employees, attendance, documents, requests, approvals, payroll, and payslips. This prevents syncing problems because the system does not keep separate branch lists in different modules.",
+    "callouts": [
+      "Add Branch",
+      "Branch Status",
+      "One Branch List"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 14,
+    "title": "System Configuration - Attendance Config",
+    "page": "config-attendance",
+    "voiceover": "Attendance Configuration controls how attendance data enters Nexus-HRM and how attendance affects payroll. Companies can choose CSV or Excel import, API integration, device or local connector, or manual fallback. The Employee Device Mapping section connects employee records to device user IDs, fingerprint IDs, or faceprint IDs. This is how the system knows which biometric log belongs to which employee.",
+    "callouts": [
+      "CSV/XLSX Import",
+      "API Integration",
+      "Device Connector",
+      "Device Mapping"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 15,
+    "title": "Attendance Import Format",
+    "page": "config-attendance-import",
+    "voiceover": "The Attendance Import Format section allows flexible imports from different biometric systems. If one machine exports Staff ID and another exports Device User ID, Nexus-HRM can map those fields to the correct employee records.",
+    "callouts": [
+      "Download Template",
+      "Upload File",
+      "Flexible Column Mapping",
+      "Import Preview"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 16,
+    "title": "Attendance Policy Rules",
+    "page": "config-attendance-policy",
+    "voiceover": "Attendance Policy Rules define the company's working hours, working days per month, grace period, standard start time, standard end time, weekends, and overtime settings.",
+    "callouts": [
+      "Working Hours",
+      "Working Days",
+      "Grace Period",
+      "Start/End Time",
+      "Overtime Rate"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 17,
+    "title": "Attendance Deduction Rules",
+    "page": "config-attendance-deductions",
+    "voiceover": "Attendance Deduction Rules allow each company to define how absence and late arrival affect payroll. One company may use a fixed absence deduction, while another company may use progressive absence deductions. For late arrivals, a company can define a threshold. For example, if an employee is late by three hours, the system can deduct a quarter day salary. If it happens twice in the month, Nexus-HRM applies the deduction twice automatically.",
+    "callouts": [
+      "Fixed Absence",
+      "Progressive Absence",
+      "Late Deduction",
+      "Auto Calculated"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 18,
+    "title": "System Configuration - Payroll Rules",
+    "page": "config-payroll",
+    "voiceover": "Payroll Rules define payroll frequency, default payroll day, working days per month, overtime calculation, payslip generation, and negative salary behavior. These values are used by payroll calculations and attendance-based deductions.",
+    "callouts": [
+      "Payroll Frequency",
+      "Payroll Day",
+      "Auto-Generate",
+      "Overtime Multiplier"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 19,
+    "title": "System Configuration - Company Deductions",
+    "page": "config-company",
+    "voiceover": "Company-Level Deductions handle tax and company insurance. These are not entered manually for each employee. The Super Admin enters one annual bulk tax amount and one annual bulk company insurance amount. The employee count is not editable. Nexus-HRM calculates active employees automatically across all branches. This prevents outdated numbers and syncing problems.",
+    "callouts": [
+      "Annual Tax Bulk",
+      "Insurance Bulk",
+      "Auto Employee Count",
+      "Read-Only"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 19,
+    "title": "Company Deductions - Calculation",
+    "page": "config-company",
+    "voiceover": "If the annual tax bulk amount is one million and there are one hundred active employees, the system calculates ten thousand per employee per year, or eight hundred thirty-three point thirty-three per month. The same logic applies to company insurance. Nexus-HRM distributes the bulk amount automatically and sends the correct deduction to payroll and payslips.",
+    "callouts": [
+      "Tax Per Employee",
+      "Insurance Per Employee",
+      "Auto Distribution"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 20,
+    "title": "System Configuration - Medical Insurance",
+    "page": "config-medical",
+    "voiceover": "Medical Insurance is also automated. The Super Admin defines whether the deduction is a fixed monthly amount or a percentage of basic salary. Then, employees who have medical insurance enabled receive the deduction automatically in payroll. If the employee does not have medical insurance enabled, the deduction is zero.",
+    "callouts": [
+      "Fixed Amount",
+      "Percentage",
+      "Auto Applied",
+      "Eligible Only"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 21,
+    "title": "System Configuration - Loans",
+    "page": "config-loans",
+    "voiceover": "Loans are automated through employee loan data. If an employee has an active loan, Nexus-HRM automatically deducts the monthly installment from payroll. If the loan is completed or paused, the deduction stops.",
+    "callouts": [
+      "Active Loan",
+      "Monthly Installment",
+      "Auto Deduct",
+      "Stops When Completed"
+    ],
+    "duration_pad": 2
+  },
+  {
+    "id": 22,
+    "title": "System Configuration - Permissions",
+    "page": "config-permissions",
+    "voiceover": "Permissions control who can access and edit sensitive areas. The Super Admin can edit all System Configuration values. HR Admins can manage operational HR data but should not edit critical financial settings like tax bulk amounts or company insurance unless permission is granted. Managers and employees should not access System Configuration by default.",
+    "callouts": [
+      "Super Admin: Full Access",
+      "HR Admin: Operational",
+      "Manager: Limited",
+      "Employee: Self-Service"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 23,
+    "title": "One Source of Truth",
+    "page": "dashboard",
+    "voiceover": "One of the most important goals of Nexus-HRM is avoiding syncing problems. The system is built around one source of truth. Branches, employees, attendance rules, payroll rules, tax, insurance, medical insurance, loans, and documents are not duplicated across disconnected pages. They all connect back to the same centralized configuration and employee database. When a new branch is added in System Configuration, it becomes available when adding employees, filtering attendance, organizing documents, and calculating payroll. When an employee is imported through Onboarding, that same employee appears across Attendance, Documents, Requests, Approvals, Payroll, and Payslip without entering the same data again. The same applies to payroll. Tax and company insurance are configured once as company-level bulk amounts. Nexus-HRM calculates the active employee count across all branches, distributes the amounts, and applies the correct deductions in payslips. Since the count is calculated automatically, there is no manual employee count field that can become outdated.",
+    "callouts": [
+      "One Source of Truth",
+      "No Duplicate Data",
+      "Branches Sync Everywhere",
+      "Auto Employee Count"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 24,
+    "title": "End-to-End Automation",
+    "page": "dashboard",
+    "voiceover": "To summarize the automation flow: the Super Admin configures company rules in System Configuration. Employees are imported through Onboarding or managed from the Employees page. Attendance logs are matched to employees. Documents are linked to employee profiles. Requests and approvals are tracked. Payroll reads all of this data and generates payslips automatically. This turns Nexus-HRM from separate HR pages into a connected operating system where the company configures rules once and the system keeps everything synchronized.",
+    "callouts": [
+      "Configure Once",
+      "Import Employees",
+      "Match Attendance",
+      "Auto Payroll",
+      "Connected System"
+    ],
+    "duration_pad": 3
+  },
+  {
+    "id": 25,
+    "title": "Closing",
+    "page": "dashboard",
+    "voiceover": "Nexus-HRM gives companies a centralized HR system where configuration happens once, and daily HR operations become automated. From onboarding and employee records to attendance, documents, approvals, deductions, payroll, and payslips, the Super Admin has full control while the system reduces manual work, calculation errors, and syncing problems. Thank you Dr. Mohamed Yehya. This was the Super Admin walkthrough of Nexus-HRM.",
+    "callouts": [
+      "Nexus-HRM",
+      "Centralized. Automated. Synchronized."
+    ],
+    "duration_pad": 5
+  }
+]
