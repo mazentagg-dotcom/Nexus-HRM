@@ -685,7 +685,7 @@ func (r *LeaveRequestRepository) FindAll(employeeID, status, leaveType string, p
 	var items []models.LeaveRequest
 	var total int64
 
-	baseCount := "SELECT COUNT(*) FROM leave_requests"
+	baseCount := "SELECT COUNT(*) FROM leave_requests lr"
 	baseList := `SELECT lr.id, lr.employee_id, e.first_name || ' ' || e.last_name as employee_name,
 		lr.leave_type, lr.start_date, lr.end_date, lr.duration_days, lr.reason, lr.status,
 		lr.approver_id, lr.approved_at, lr.rejection_reason, lr.created_at, lr.updated_at
@@ -813,7 +813,7 @@ func (r *PayrollRepository) FindAll(employeeID, status string, page, pageSize in
 	var items []models.PayrollRecord
 	var total int64
 
-	baseCount := "SELECT COUNT(*) FROM payroll_records"
+	baseCount := "SELECT COUNT(*) FROM payroll_records pr"
 	baseList := `SELECT pr.id, pr.employee_id, e.first_name || ' ' || e.last_name as employee_name,
 		pr.pay_period_start, pr.pay_period_end, pr.basic_salary,
 		pr.housing_allowance, pr.transport_allowance, pr.medical_allowance, pr.food_allowance,

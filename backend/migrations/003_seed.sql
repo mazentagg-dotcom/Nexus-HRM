@@ -156,7 +156,7 @@ ON CONFLICT DO NOTHING;
 -- Departments
 -- ============================================
 INSERT INTO departments (id, name, code, description, manager_id, budget) VALUES
-    ('c0000000-0000-0000-0000-000000000001', 'Engineering', 'ENG', 'Software engineering and development team', 'b0000000-0000-0000-0000-000000000001', 500000.00) ON CONFLICT (code) DO NOTHING;
+    ('c0000000-0000-0000-0000-000000000001', 'Engineering', 'ENG', 'Software engineering and development team', 'b0000000-0000-0000-0000-000000000004', 500000.00) ON CONFLICT (code) DO NOTHING;
 INSERT INTO departments (id, name, code, description, budget) VALUES
     ('c0000000-0000-0000-0000-000000000002', 'Sales', 'SAL', 'Sales and business development team', 300000.00) ON CONFLICT (code) DO NOTHING;
 INSERT INTO departments (id, name, code, description, budget) VALUES
@@ -193,5 +193,9 @@ INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, d
     ('d0000000-0000-0000-0000-000000000010', 'EMP-010', 'Daniel',   'Thomas',     'daniel.thomas@nexus-hrm.com',   '+1 (555) 100-0010', '1995-02-14', 'male',   'c0000000-0000-0000-0000-000000000001', 'Junior Developer',    'Junior Software Engineer', 'full_time', 'probation', '2024-09-01', 70000.00, 'd0000000-0000-0000-0000-000000000003') ON CONFLICT (employee_code) DO NOTHING;
 INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, date_of_birth, gender, department_id, position, job_title, employment_type, employment_status, hire_date, base_salary, reports_to, user_id) VALUES
     ('d0000000-0000-0000-0000-000000000011', 'EMP-011', 'John',     'Doe',        'employee@nexus-hrm.com',       '+1 (555) 100-0011', '1993-08-20', 'male',   'c0000000-0000-0000-0000-000000000001', 'Developer',           'Software Engineer',      'full_time', 'active', '2022-03-15', 90000.00,  'd0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000003') ON CONFLICT (employee_code) DO NOTHING;
+INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, date_of_birth, gender, department_id, position, job_title, employment_type, employment_status, hire_date, base_salary, reports_to, user_id) VALUES
+    ('d0000000-0000-0000-0000-000000000012', 'EMP-012', 'Admin',    'User',       'admin@nexus-hrm.com',         '+1 (555) 100-0012', '1980-01-01', 'male',   'c0000000-0000-0000-0000-000000000006', 'CEO',                'Chief Executive Officer', 'full_time', 'active', '2019-01-01', 200000.00, NULL, 'b0000000-0000-0000-0000-000000000001') ON CONFLICT (employee_code) DO NOTHING;
+INSERT INTO employees (id, employee_code, first_name, last_name, email, phone, date_of_birth, gender, department_id, position, job_title, employment_type, employment_status, hire_date, base_salary, reports_to, user_id) VALUES
+    ('d0000000-0000-0000-0000-000000000013', 'EMP-013', 'Sarah',    'Manager',    'manager@nexus-hrm.com',       '+1 (555) 100-0013', '1982-06-15', 'female', 'c0000000-0000-0000-0000-000000000001', 'Engineering Manager', 'Engineering Manager',  'full_time', 'active', '2019-06-01', 140000.00, 'd0000000-0000-0000-0000-000000000012', 'b0000000-0000-0000-0000-000000000004') ON CONFLICT (employee_code) DO NOTHING;
 
 COMMIT;

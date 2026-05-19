@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS loan_requests (
     CONSTRAINT loan_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'paid'))
 );
 
+CREATE TRIGGER trg_updated_at_loan_requests BEFORE UPDATE ON loan_requests FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
 CREATE INDEX idx_loan_requests_employee ON loan_requests(employee_id);
 CREATE INDEX idx_loan_requests_status ON loan_requests(status);
 

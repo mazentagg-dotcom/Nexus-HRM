@@ -1,13 +1,16 @@
+BEGIN;
+
 -- System Configuration tables
 -- Stores company-level HR/payroll rules and branches
 
 CREATE TABLE IF NOT EXISTS company_branches (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
+    name VARCHAR(200) NOT NULL UNIQUE,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+CREATE TRIGGER trg_updated_at_company_branches BEFORE UPDATE ON company_branches FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TABLE IF NOT EXISTS system_config (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
@@ -51,6 +54,7 @@ CREATE TABLE IF NOT EXISTS system_config (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+CREATE TRIGGER trg_updated_at_system_config BEFORE UPDATE ON system_config FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- Seed default branches
 INSERT INTO company_branches (name, is_active) VALUES
@@ -64,3 +68,5 @@ ON CONFLICT DO NOTHING;
 
 -- Seed default config (single row, id=1)
 INSERT INTO system_config (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+COMMIT;
